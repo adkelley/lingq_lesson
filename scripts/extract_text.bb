@@ -53,7 +53,10 @@
   (into [] (extract-text-xf opts) lines))
 
 (defn print-help []
-  (println "Usage: extract_text.bb <path_to_markdown_file> [--keep-link-text]"))
+  (println "Usage: extract_text.bb [path_to_markdown_file] [--keep-link-text]")
+  (println)
+  (println "Reads Markdown from a file argument, or from stdin when no file is provided.")
+  (println "Writes extracted plain text to stdout."))
 
 (let [args *command-line-args*
       help? (some #{"--help" "-h"} args)
