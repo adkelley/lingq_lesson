@@ -4,8 +4,10 @@
         hato/hato {:mvn/version "1.0.0"}
         cheshire/cheshire {:mvn/version "6.2.0"}}
  :tasks
- {clean    {:doc "Run LingQ API tasks"
+ {text     {:doc "Extract text from a markdown file"
             :task (apply shell "bb" "scripts/extract_text.bb" *command-line-args*)}
+  tts      {:doc "Text to speech"
+            :task (apply shell "bb" "scripts/text_to_speech.bb" *command-line-args*)}
   test     {:doc "Run tests"
             :requires ([test-runner])
             :task (test-runner/run)
