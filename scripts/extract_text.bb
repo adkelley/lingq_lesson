@@ -60,19 +60,23 @@
 
 (let [args *command-line-args*
       help? (some #{"--help" "-h"} args)
-      [article & flags] args
+      flags (filter #(string/starts-with? % "-") args)
+      files (remove #(string/starts-with? % "-") args)
+      article (first files)
       opts {:keep-link-text? (contains? (set flags) "--keep-link-text")}]
   (when help?
     (print-help)
     (System/exit 0))
 
-  (when-not article
-    (exit-with-error "Usage: extract_text.bb <path_to_markdown_file>"))
+  (when (> (count files) 1)
+    (exit-with-error "Usage: extract_text.bb [path_to_markdown_file] [--keep-link-text]"))
 
-  (when-not (= (fs/extension article) "md")
+  (when (and article (not= (fs/extension article) "md"))
     (exit-with-error "File must be a markdown file"))
 
-  (let [filename (str (fs/strip-ext article) ".txt")
-        lines (fs/read-all-lines article)
+  (let [lines (if article
+                (fs/read-all-lines article)
+                (line-seq (java.io.BufferedReader. *in*)))
         cleaned (extract-text-lines lines opts)]
-    (fs/write-lines filename cleaned)))
+    (doseq [line cleaned]
+      (println line))))

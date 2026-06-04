@@ -11,7 +11,7 @@ timing data.
 ```text
 article URL
   ↓
-url_to_markdown
+defuddle CLI
   ↓
 article.md
   ↓
@@ -37,25 +37,37 @@ LingQ lesson
 ### 1. URL → Markdown
 
 Use [`defuddle`](https://www.npmjs.com/package/defuddle) to fetch an article URL,
-extract the main article content, and return Markdown.
+extract the main article content, and write Markdown to a file.
 
-Planned script:
-
-```text
-url_to_markdown.js
-```
-
-Expected contract:
+Write Markdown to a file:
 
 ```sh
-url_to_markdown.js "https://example.com/article" > article.md
+npx defuddle parse <url> --markdown --output <output_file>
+```
+
+Or emit Markdown to `stdout` for piping:
+
+```sh
+npx defuddle parse <url> --markdown
+```
+
+Expected file-output contract:
+
+```sh
+npx defuddle parse "https://example.com/article" --markdown --output article.md
+```
+
+Expected stdout contract:
+
+```sh
+npx defuddle parse "https://example.com/article" --markdown
 ```
 
 Responsibilities:
 
 - fetch the article URL
 - extract the main readable article content
-- emit Markdown to `stdout`
+- write Markdown to the requested output file, or emit Markdown to `stdout`
 - send logs and errors to `stderr`
 
 ### 2. Markdown → Plain Text
@@ -75,10 +87,11 @@ Expected contract:
 bb scripts/extract_text.bb article.md > article.txt
 ```
 
-Eventually this script should also support stdin:
+Eventually this script should also support stdin so it can consume Markdown
+directly from Defuddle:
 
 ```sh
-url_to_markdown.js "https://example.com/article" \
+npx defuddle parse "https://example.com/article" --markdown \
   | bb scripts/extract_text.bb \
   > article.txt
 ```
@@ -197,19 +210,53 @@ Prefer small, composable scripts that follow Unix-style conventions:
 This keeps individual stages testable while still allowing them to be chained
 together.
 
+## Working Directory
+
+The full workflow creates several intermediate artifacts:
+
+- `article.md`
+- `article.txt`
+- `article.mp3`
+- `article.srt`
+
+To avoid polluting the current directory, the eventual orchestrator should write
+these files to a working directory.
+
+Default:
+
+```text
+/tmp/lingq_lesson
+```
+
+Override:
+
+```sh
+--work-dir ./work/yomiuri
+```
+
+Low-level scripts should stay simple and accept explicit input/output paths. The
+orchestrator should be responsible for resolving `--work-dir`, creating it if
+needed, and passing concrete paths to each stage.
+
 ## Example Development Workflow
 
 ```sh
-url_to_markdown.js "https://example.com/article" > article.md
-bb scripts/extract_text.bb article.md > article.txt
-bb scripts/text_to_speech.bb article.txt --output article.mp3
-bb scripts/transcribe_audio.bb article.mp3 --output article.srt
+WORK_DIR=/tmp/lingq_lesson
+mkdir -p "$WORK_DIR"
+
+npx defuddle parse "https://example.com/article" \
+  --markdown \
+  --output "$WORK_DIR/article.md"
+
+bb scripts/extract_text.bb "$WORK_DIR/article.md" > "$WORK_DIR/article.txt"
+bb scripts/text_to_speech.bb "$WORK_DIR/article.txt" --output "$WORK_DIR/article.mp3"
+bb scripts/transcribe_audio.bb "$WORK_DIR/article.mp3" --output "$WORK_DIR/article.srt"
 bb scripts/post_lingq_lesson.bb \
   --title "Example Article" \
   --language ja \
-  --text article.txt \
-  --audio article.mp3 \
-  --srt article.srt
+  --text "$WORK_DIR/article.txt" \
+  --audio "$WORK_DIR/article.mp3" \
+  --srt "$WORK_DIR/article.srt"
 ```
 
 ## Open Questions
@@ -217,7 +264,7 @@ bb scripts/post_lingq_lesson.bb \
 - How should article metadata, such as title/source/date, move through the
   pipeline?
 - Should each stage emit sidecar JSON metadata in addition to text/audio files?
-- Should the final workflow be a shell script, a Babashka task, or remain a set
-  of independent commands?
+- Should the final orchestrator be a shell script, a Babashka task, or remain a
+  set of independent commands?
 - Which LingQ fields are required when creating a lesson through the API?
 - How should long articles be chunked for TTS limits, if necessary?
