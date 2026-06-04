@@ -1,0 +1,45 @@
+# Node
+node_modules/
+
+# Clojure / Babashka
+.cpcache/
+.nrepl-port
+.rebel_readline_history
+
+# clj-kondo / editor caches
+.clj-kondo/
+.lsp/
+
+# Build outputs
+target/
+classes/
+
+# Local input/generated artifacts
+*.txt
+*.md
+!docs/commit.md
+!README.md
+
+# Generated media/artifacts
+*.mp3
+*.wav
+*.m4a
+*.aac
+*.flac
+*.opus
+*.pcm
+*.srt
+*.jpg
+*.jpeg
+*.png
+*.gif
+
+# Local env/secrets
+.env
+.env.*
+!.env.example
+
+# OS/editor files
+.DS_Store
+*.swp
+*.swo

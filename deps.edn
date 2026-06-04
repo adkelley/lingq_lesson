@@ -1,0 +1,13 @@
+{:paths ["scripts"]
+ :deps {org.clojure/clojure {:mvn/version "1.12.5"}
+        org.babashka/cli {:mvn/version "0.9.68"}
+        babashka/fs {:mvn/version "0.5.33"}
+        hato/hato {:mvn/version "1.0.0"}
+        cheshire/cheshire {:mvn/version "6.2.0"}}
+ :aliases {:test {:extra-paths ["test" "script"]}
+           :fmt {:extra-deps {dev.weavejester/cljfmt {:mvn/version "0.13.1"}}
+                 :main-opts ["-m" "cljfmt.main"]}
+           :rebel {:extra-deps {com.bhauman/rebel-readline {:mvn/version "0.1.7"}}
+                   :exec-fn rebel-readline.tool/repl
+                   :exec-args {:key-map :viins}
+                   :main-opts ["-m" "rebel-readline.main"]}}}

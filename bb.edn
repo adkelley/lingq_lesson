@@ -1,0 +1,14 @@
+{:paths ["scripts"]
+ :deps {org.babashka/cli {:mvn/version "0.9.68"}
+        babashka/fs {:mvn/version "0.5.33"}
+        hato/hato {:mvn/version "1.0.0"}
+        cheshire/cheshire {:mvn/version "6.2.0"}}
+ :tasks
+ {clean    {:doc "Run LingQ API tasks"
+            :task (apply shell "bb" "scripts/extract_text.bb" *command-line-args*)}
+  test     {:doc "Run tests"
+            :requires ([test-runner])
+            :task (test-runner/run)
+            :depends []}
+  fmt      {:doc "Format Clojure files with cljfmt"
+            :task (shell "clojure -M:fmt fix src test script")}}}
