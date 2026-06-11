@@ -30,6 +30,14 @@ article.md                    │
 extract_images                │
   ↓                           │
 article-images.txt            │
+  ↓                           │
+LLM selects image             │
+  ↓                           │
+prepare_image                 │
+  ↓                           │
+lesson-cover.jpg              │
+                              │
+article.txt                   │
   ↓
 text_to_speech
   ↓
@@ -39,7 +47,7 @@ transcribe_audio
   ↓
 article.srt
   ↓
-post_lingq_lesson ← article image URL/path
+post_lingq_lesson ← lesson-cover.jpg
   ↓
 LingQ lesson
 ```
@@ -140,18 +148,86 @@ Responsibilities:
 
 - read Markdown from a file argument or stdin
 - find Markdown image links like `![alt text](image-url)`
-- emit image URLs or paths to `stdout`, one per line
+- emit structured JSON to `stdout` with image URL, alt text, and source order
 - send logs and errors to `stderr`
 
-Example:
+Example output:
 
-```sh
-IMAGE=$(bb scripts/extract_images.bb article.md | head -n 1)
+```json
+[
+  {
+    "index": 0,
+    "alt": "Article image alt text",
+    "url": "https://example.com/image.jpg"
+  }
+]
 ```
 
-The final LingQ upload stage can use that value as an image argument.
+For now, the pipeline uses the first extracted image as the default lesson cover.
+Later, the LLM orchestrator can use this structured output to choose the best
+image candidate.
 
-### 4. Text → Audio
+### 4. Prepare Lesson Image
+
+Use a Babashka script to create a local cover image file from the extracted image
+candidate JSON.
+
+Current script:
+
+```text
+cover_image.bb
+```
+
+Current contract:
+
+```sh
+bb cover article-images.json --cover lesson-cover.jpg
+```
+
+Current responsibilities:
+
+- read the JSON output from `extract_images.bb`
+- select the first image candidate
+- download the image URL to a local cover image file
+
+Planned responsibilities:
+
+- support local image files as inputs
+- use ImageMagick to create a practical LingQ cover image
+- target a 16:9 aspect ratio, such as `1600x900`
+- prefer JPEG output when possible
+- validate that the output file exists and is non-empty
+- fail clearly if ImageMagick is not installed
+- emit the final local image path to `stdout`
+- send logs and errors to `stderr`
+
+Planned ImageMagick command shape:
+
+```sh
+magick input.jpg \
+  -resize '1600x900^' \
+  -gravity center \
+  -extent 1600x900 \
+  -quality 85 \
+  lesson-cover.jpg
+```
+
+Install ImageMagick on macOS:
+
+```sh
+brew install imagemagick
+```
+
+LingQ does not appear to publish an official lesson cover image file-size limit.
+For now, the tool should use practical web-cover defaults:
+
+- 16:9 aspect ratio
+- `1600x900` target dimensions
+- JPEG output when possible
+- target size under roughly 2 MB when practical
+- hard maximum around 10 MB unless testing shows otherwise
+
+### 5. Text → Audio
 
 Use OpenAI text-to-speech to generate an audio file from the cleaned article text.
 
@@ -180,7 +256,7 @@ Required environment:
 OPENAI_API_KEY=...
 ```
 
-### 5. Audio → SRT
+### 6. Audio → SRT
 
 Use OpenAI Whisper/transcription to generate subtitle timing data from the audio.
 
@@ -206,7 +282,7 @@ Responsibilities:
 Note: Whisper is speech-to-text. It creates the transcript/subtitles from the
 audio; it does not generate the audio itself.
 
-### 6. Upload LingQ Lesson
+### 7. Upload LingQ Lesson
 
 Use the LingQ API to create a new lesson from the generated artifacts.
 
@@ -225,7 +301,7 @@ bb scripts/post_lingq_lesson.bb \
   --text article.txt \
   --audio article.mp3 \
   --srt article.srt \
-  --image <image_url_or_path>
+  --image lesson-cover.jpg
 ```
 
 Responsibilities:
@@ -286,7 +362,8 @@ The full workflow creates several intermediate artifacts:
 
 - `article.md`
 - `article.txt`
-- `article-images.txt`
+- `article-images.json`
+- `lesson-cover.jpg`
 - `article.mp3`
 - `article.srt`
 
@@ -320,8 +397,8 @@ npx defuddle parse "https://example.com/article" \
   --output "$WORK_DIR/article.md"
 
 bb scripts/extract_text.bb "$WORK_DIR/article.md" > "$WORK_DIR/article.txt"
-bb scripts/extract_images.bb "$WORK_DIR/article.md" > "$WORK_DIR/article-images.txt"
-IMAGE=$(head -n 1 "$WORK_DIR/article-images.txt")
+bb scripts/extract_images.bb "$WORK_DIR/article.md" > "$WORK_DIR/article-images.json"
+bb cover "$WORK_DIR/article-images.json" --cover "$WORK_DIR/lesson-cover.jpg"
 
 bb scripts/text_to_speech.bb "$WORK_DIR/article.txt" --output "$WORK_DIR/article.mp3"
 bb scripts/transcribe_audio.bb "$WORK_DIR/article.mp3" --output "$WORK_DIR/article.srt"
@@ -331,7 +408,7 @@ bb scripts/post_lingq_lesson.bb \
   --text "$WORK_DIR/article.txt" \
   --audio "$WORK_DIR/article.mp3" \
   --srt "$WORK_DIR/article.srt" \
-  --image "$IMAGE"
+  --image "$WORK_DIR/lesson-cover.jpg"
 ```
 
 ## LLM-Orchestrated Workflow
@@ -346,7 +423,8 @@ LLM orchestrator
   ├─ run Defuddle to produce article.md
   ├─ run extract_text.bb to produce article.txt
   ├─ run extract_images.bb to list image candidates
-  ├─ choose title, language, and lesson image
+  ├─ choose title and language
+  ├─ run cover_image.bb to produce lesson-cover.jpg from the first image candidate
   ├─ run text_to_speech.bb to produce article.mp3
   ├─ run transcribe_audio.bb to produce article.srt
   └─ run post_lingq_lesson.bb with selected metadata and artifacts
@@ -367,3 +445,5 @@ should inspect command exit statuses before continuing to the next stage.
   should it emit all image links and let the orchestrator choose?
 - How should long articles be chunked for TTS limits, if necessary?
 - What checks should the orchestrator perform before posting the final lesson?
+- Does LingQ enforce an undocumented maximum image upload size or accepted MIME
+  type list?

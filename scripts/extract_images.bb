@@ -31,27 +31,21 @@
        with-indexes
        vec))
 
-(defn print-images [images {:keys [json?]}]
-  (if json?
-    (println (json/generate-string images {:pretty true}))
-    (doseq [{:keys [url]} images]
-      (println url))))
+(defn print-images [images]
+  (println (json/generate-string images {:pretty true})))
 
-(def usage "Usage: extract_images.bb <path_to_markdown_file> [--json]")
+(def usage "Usage: extract_images.bb [path_to_markdown_file]")
 
 (defn print-help []
   (println usage)
   (println)
   (println "Reads Markdown from a file argument, or from stdin when no file is provided.")
-  (println "Extracts Markdown image links and writes them to stdout.")
-  (println "By default, outputs one image URL per line; with --json, outputs structured image data."))
+  (println "Extracts Markdown image links and writes structured JSON to stdout."))
 
 (let [args *command-line-args*
       help? (some #{"--help" "-h"} args)
-      flags (filter #(string/starts-with? % "-") args)
       files (remove #(string/starts-with? % "-") args)
-      article (first files)
-      opts {:json? (contains? (set flags) "--json")}]
+      article (first files)]
   (when help?
     (print-help)
     (System/exit 0))
@@ -66,4 +60,4 @@
                 (fs/read-all-lines article)
                 (line-seq (java.io.BufferedReader. *in*)))
         images (extract-image-lines lines)]
-    (print-images images opts)))
+    (print-images images)))
