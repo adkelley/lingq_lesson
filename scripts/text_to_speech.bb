@@ -159,7 +159,7 @@
    {:output       {:alias :o
                    :desc "Output audio file path"
                    :validate valid-audio-format?
-                   :require true}
+                   :default "article.mp3"}
     :voice        {:alias :v
                    :default "alloy"
                    :validate valid-voice?

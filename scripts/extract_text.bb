@@ -2,6 +2,7 @@
 
 (require
  '[clojure.string :as string]
+ '[cheshire.core :as json]
  '[babashka.fs :as fs])
 
 (defn exit-with-error [message]
@@ -53,30 +54,40 @@
   (into [] (extract-text-xf opts) lines))
 
 (defn print-help []
-  (println "Usage: extract_text.bb [path_to_markdown_file] [--keep-link-text]")
+  (println "Usage: extract_text.bb [path_to_json_file] [--keep-link-text]")
   (println)
-  (println "Reads Markdown from a file argument, or from stdin when no file is provided.")
+  (println "Reads Markdown from a JSON object, either from a file or from stdin when no file is provided.")
+  (println "JSON object must have a 'contentMarkdown' field.")
   (println "Writes extracted plain text to stdout."))
 
 (let [args *command-line-args*
       help? (some #{"--help" "-h"} args)
       flags (filter #(string/starts-with? % "-") args)
       files (remove #(string/starts-with? % "-") args)
-      article (first files)
+      json-file (first files)
       opts {:keep-link-text? (contains? (set flags) "--keep-link-text")}]
   (when help?
     (print-help)
     (System/exit 0))
 
   (when (> (count files) 1)
-    (exit-with-error "Usage: extract_text.bb [path_to_markdown_file] [--keep-link-text]"))
+    (exit-with-error "Usage: extract_text.bb [path_to_json_file] [--keep-link-text]"))
 
-  (when (and article (not= (fs/extension article) "md"))
-    (exit-with-error "File must be a markdown file"))
+  (when (and json-file (not= (fs/extension json-file) "json"))
+    (exit-with-error "File must be a json file"))
 
-  (let [lines (if article
-                (fs/read-all-lines article)
-                (line-seq (java.io.BufferedReader. *in*)))
-        cleaned (extract-text-lines lines opts)]
-    (doseq [line cleaned]
-      (println line))))
+  (let [json-str (if json-file
+                   (slurp json-file)
+                   (slurp *in*))
+        parsed (try
+                 (json/parse-string json-str true)
+                 (catch Exception e
+                   (exit-with-error (format "Failed to parse JSON: %s" (.getMessage e)))))
+        md (:contentMarkdown parsed)]
+    (when-not (string? md)
+      (exit-with-error "JSON must contain a 'contentMarkdown' field containing the article text"))
+
+    (let [lines (string/split-lines md)
+          cleaned (extract-text-lines lines opts)]
+      (doseq [line cleaned]
+        (println line)))))

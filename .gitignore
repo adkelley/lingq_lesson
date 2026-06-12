@@ -17,6 +17,9 @@ classes/
 # Local input/generated artifacts
 *.txt
 *.md
+*.json
+!package.json
+!package-lock.json
 !docs/commit.md
 !README.md
 

@@ -4,7 +4,9 @@
         hato/hato {:mvn/version "1.0.0"}
         cheshire/cheshire {:mvn/version "6.2.0"}}
  :tasks
- {text     {:doc "Extract text from a markdown file"
+ {parse    {:doc "Extract content from web page into a json file"
+            :task (apply shell "bb" "scripts/parse_article.bb" *command-line-args*)}
+  text     {:doc "Extract text from a markdown file"
             :task (apply shell "bb" "scripts/extract_text.bb" *command-line-args*)}
   images   {:doc "Extract image links from a markdown file"
             :task (apply shell "bb" "scripts/extract_images.bb" *command-line-args*)}
@@ -14,6 +16,8 @@
             :task (apply shell "bb" "scripts/text_to_speech.bb" *command-line-args*)}
   srt      {:doc "Audio to SRT"
             :task (apply shell "bb" "scripts/transcribe_audio.bb" *command-line-args*)}
+  lingq    {:doc "Upload a lesson to LingQ"
+            :task (apply shell "bb" "scripts/lingq.bb" *command-line-args*)}
   test     {:doc "Run tests"
             :requires ([test-runner])
             :task (test-runner/run)
