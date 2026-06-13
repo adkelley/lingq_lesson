@@ -1,6 +1,8 @@
 (ns lingq-lesson.core
   (:require
    [babashka.cli :as cli]
+   [cheshire.core :as json]
+   [clojure.string :as string]
    [lingq-lesson.parser :as parser]))
 
 (def ^:private voices #{"ceder", "alloy", "coral"})
@@ -71,8 +73,17 @@
   [{:keys [opts]}]
   (println "Your opts:" opts)
   (try
-    (let [article (parser/parse-article (:url opts))]
-      (println "Parsed article:" article)
+    (let [article (parser/parse-article (:url opts))
+          parsed (try
+                   (json/parse-string article true)
+                   (catch clojure.lang.ExceptionInfo e
+                     (fail! (format "Failed to parse JSON: %s" (ex-message e)))))
+          markdown (:contentMarkdown parsed)
+          lines (parser/markdown->sentences markdown)
+          text (string/join "\n" lines)
+          image-url (:image parsed)
+          image (parser/download-image! image-url)]
+      (println "Parsed article:" text)
       (println "Orchestrating..."))
     (catch clojure.lang.ExceptionInfo e
       (fail! (ex-message e))))
