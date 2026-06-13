@@ -1,4 +1,4 @@
-{:paths ["scripts"]
+{:paths ["scripts" "src"]
  :deps {org.babashka/cli {:mvn/version "0.9.68"}
         babashka/fs {:mvn/version "0.5.33"}
         hato/hato {:mvn/version "1.0.0"}
@@ -17,7 +17,7 @@
   srt      {:doc "Audio to SRT"
             :task (apply shell "bb" "scripts/transcribe_audio.bb" *command-line-args*)}
   lingq    {:doc "Upload a lesson to LingQ"
-            :task (apply shell "bb" "scripts/lingq.bb" *command-line-args*)}
+            :task (apply shell "bb" "src/lingq_lesson/core.clj" *command-line-args*)}
   test     {:doc "Run tests"
             :requires ([test-runner])
             :task (test-runner/run)

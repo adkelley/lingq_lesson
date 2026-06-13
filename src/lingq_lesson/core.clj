@@ -1,6 +1,7 @@
 (ns lingq-lesson.core
   (:require
-   [babashka.cli :as cli]))
+   [babashka.cli :as cli]
+   [lingq-lesson.parser :as parser]))
 
 (def ^:private voices #{"ceder", "alloy", "coral"})
 
@@ -60,9 +61,21 @@
                 :coerce :boolean
                 :desc "Show help"}))
 
+(defn- fail!
+  [msg]
+  (binding [*out* *err*]
+    (println (str "Error: " msg)))
+  (System/exit 1))
+
 (defn run
   [{:keys [opts]}]
   (println "Your opts:" opts)
+  (try
+    (let [article (parser/parse-article (:url opts))]
+      (println "Parsed article:" article)
+      (println "Orchestrating..."))
+    (catch clojure.lang.ExceptionInfo e
+      (fail! (ex-message e))))
   ;; orchestrate here
   )
 
