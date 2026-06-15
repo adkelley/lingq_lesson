@@ -1,10 +1,56 @@
 (ns lingq-lesson.parser
   (:require
    [clojure.string :as string]
+   [cheshire.core :as json]
    [hato.client :as hc]
    [babashka.process :refer [shell]]))
 
-;; Image download
+;; ---------------------------------------------------------------------------
+;; Constants
+;; ---------------------------------------------------------------------------
+(def ^:private sentence-boundary #"(?<=[.。!?！？])")
+(def ^:private sentence-punctuation #"[.。!?！？]")
+
+;; ---------------------------------------------------------------------------
+;; Utilities
+;; ---------------------------------------------------------------------------
+(defn- fail!
+  [msg]
+  (binding [*out* *err*]
+    (println (str "Error: " msg)))
+  (System/exit 1))
+
+;; ---------------------------------------------------------------------------
+;; Defuddle / fetch helpers
+;; ---------------------------------------------------------------------------
+(defn- defuddle-exists? []
+  (zero? (:exit (shell {:out :string :err :string :continue true}
+                       "npx" "defuddle" "--version"))))
+
+(defn- fetch-defuddle-json [url]
+  (when-not (defuddle-exists?)
+    (throw (ex-info "defuddle not found" {})))
+
+  (let [res (shell {:out :string :err :string :continue true}
+                   "npx" "defuddle" "parse" url "--json")
+        exit (:exit res 0)
+        out  (:out res "")
+        err  (:err res "")]
+    (when-not (zero? exit)
+      (throw (ex-info "Unable to fetch article using defuddle."
+                      {:exit exit
+                       :err err})))
+    out))
+
+(defn- parse-defuddle-json [out]
+  (try
+    (json/parse-string out true)
+    (catch Exception e
+      (fail! (format "Failed to decode article to JSON: %s" (.getMessage e))))))
+
+;; ---------------------------------------------------------------------------
+;; Image helper (returns byte-array body)
+;; ---------------------------------------------------------------------------
 (defn download-image! [url]
   (let [response (hc/get url {:as :byte-array
                               :throw-exceptions false})
@@ -15,50 +61,46 @@
                        :url url})))
     body))
 
-;; Text extraction from markdown helpers
+;; ---------------------------------------------------------------------------
+;; Markdown -> sentence extraction helpers
+;; ---------------------------------------------------------------------------
 (defn- strip-markdown-blocks [markdown]
   (-> markdown
-      ;; Raw embedded media/HTML from article pages is not lesson text.
+      ;; Remove embedded HTML/iframe/script/style blocks and any tags
       (string/replace #"(?is)<iframe\b.*?</iframe>" "")
       (string/replace #"(?is)<script\b.*?</script>" "")
       (string/replace #"(?is)<style\b.*?</style>" "")
       (string/replace #"(?is)<[^>]+>" "")
 
-      ;; Markdown image/link markup may span lines, so remove it before line splitting.
+      ;; Remove multi-line Markdown image/link constructs before line splitting
       (string/replace #"(?s)!\[[^\]]*\]\([^)]+\)" "")
       (string/replace #"(?s)\[([^\]]*)\]\([^)]+\)" "$1")))
 
 (defn- strip-markdown-inline [line]
   (-> line
-      ;; images: always remove image markup and alt text
+      ;; remove images (keep nothing)
       (string/replace #"\!\[([^\]]*)\]\([^)]+\)" "")
 
-      ;; links: [text](url) -> text || ""
+      ;; links: [text](url) -> text
       (string/replace #"\[([^\]]*)\]\([^)]+\)" "$1")
 
-      ;; bold/italic/code markers
+      ;; emphasis/code markers
       (string/replace #"(\*\*|__|\*|_|`)" "")
 
-      ;; leading blockquote marker
+      ;; blockquote markers
       (string/replace #"^\s*>\s?" "")
 
-      ;; leading unordered list marker
+      ;; list markers
       (string/replace #"^\s*[-*+]\s+" "")
-
-      ;; leading ordered list marker
       (string/replace #"^\s*\d+\.\s+" "")
 
-      ;; leading heading marker: # Title -> Title
+      ;; headings
       (string/replace #"^\s*#{1,6}\s+" "")
 
       string/trim))
 
 (defn- markdown-structural-line? [line]
-  (boolean
-   (re-matches #"^\s*(```|~~~|---+|\*\*\*+|___+)\s*$" line)))
-
-(def ^:private sentence-boundary #"(?<=[.。!?！？])")
-(def ^:private sentence-punctuation #"[.。!?！？]")
+  (boolean (re-matches #"^\s*(```|~~~|---+|\*\*\*+|___+)\s*$" line)))
 
 (defn- extract-sentences-xf []
   (comp
@@ -69,24 +111,29 @@
    (filter #(re-find sentence-punctuation %))
    (remove string/blank?)))
 
-(defn markdown->sentences [markdown]
+(defn- markdown->sentences [markdown]
   (into [] (extract-sentences-xf) (string/split-lines (strip-markdown-blocks markdown))))
 
-(defn- defuddle-exists? []
-  (zero? (:exit (shell {:out :string :err :string :continue true}
-                       "npx" "defuddle" "--version"))))
+(defn- markdown->text [content-markdown]
+  (string/join "\n" (markdown->sentences content-markdown)))
 
-(defn parse-article [url]
-  (when-not (defuddle-exists?)
-    (throw (ex-info "defuddle not found" {})))
+(defn- defuddle->article
+  "Map parsed defuddle output into canonical article map"
+  [parsed]
+  (let [content-markdown (or (:contentMarkdown parsed) "")]
+    {:text (markdown->text content-markdown)
+     :title (or (:title parsed) "")
+     :image (download-image! (or (:image parsed) ""))
+     :description (or (:description parsed) "")}))
 
-  (let [res (shell {:out :string :err :string :continue true}
-                   "npx" "defuddle" "parse" url "--json")
-        exit (:exit res 0)
-        out  (:out res "")
-        err  (:err res "")]
-    (when-not (zero? exit)
-      (throw (ex-info "Unable to parse article."
-                      {:exit exit
-                       :err err})))
-    out))
+;; ---------------------------------------------------------------------------
+;; Public API
+;; ---------------------------------------------------------------------------
+(defn parse-article
+  "Parses an article from the given URL using defuddle.
+  The shape returned is a map with keys :text, :title, :image, and :description."
+  [url]
+  (-> url
+      fetch-defuddle-json
+      parse-defuddle-json
+      defuddle->article))

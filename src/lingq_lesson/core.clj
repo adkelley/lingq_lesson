@@ -1,31 +1,20 @@
 (ns lingq-lesson.core
   (:require
    [babashka.cli :as cli]
-   [cheshire.core :as json]
-   [clojure.string :as string]
+   [lingq-lesson.audio :as audio]
+   [lingq-lesson.lingq :as lingq]
    [lingq-lesson.parser :as parser]))
 
-(def ^:private voices #{"ceder", "alloy", "coral"})
+(def ^:private voices #{"alloy" "ash" "ballad" "cedar" "coral" "echo"
+                        "fable" "marin" "nova" "onyx" "sage" "verse"})
+
+(def ^:private default-voice "cedar")
 
 (defn- valid-voice?
   [voice]
   (contains? voices voice))
 
 ;; Vibe
-(def ^:private newscaster-instructions
-  (str
-   "Voice: Clear, confident, and professional, with a well-supported mid-to-deep "
-   "register. Speech is articulate and steady, conveying credibility and authority."
-   "\n"
-   "Phrasing: Sentences flow smoothly and logically, with emphasis placed on key facts, "
-   "names, locations, and developments. Information is presented efficiently and without "
-   "unnecessary dramatization."
-   "\n"
-   "Punctuation: Natural pauses at commas and sentence boundaries. Brief pauses separate "
-   "topics and transitions. Avoid excessive hesitation, ellipses, or dramatic stops."
-   "\n"
-   "Tone: Objective, composed, and informative. Maintain a calm, measured delivery that "
-   "prioritizes clarity, accuracy, and listener comprehension while remaining engaging and attentive."))
 
 (def ^:private vibes #{"newscaster"})
 
@@ -51,7 +40,7 @@
                              :ex-msg (fn [{:keys [value]}]
                                        (str "Invalid URL: " value))}}
    :voice        {:desc "Voice to use"
-                  :default "ceder"
+                  :default default-voice
                   :validate valid-voice?}
    :vibe         {:desc "Voice/style instructions"
                   :default "newscaster"
@@ -71,24 +60,19 @@
 
 (defn run
   [{:keys [opts]}]
-  (println "Your opts:" opts)
+  ;; (println "Your opts:" opts)
   (try
     (let [article (parser/parse-article (:url opts))
-          parsed (try
-                   (json/parse-string article true)
-                   (catch clojure.lang.ExceptionInfo e
-                     (fail! (format "Failed to parse JSON: %s" (ex-message e)))))
-          markdown (:contentMarkdown parsed)
-          lines (parser/markdown->sentences markdown)
-          text (string/join "\n" lines)
-          image-url (:image parsed)
-          image (parser/download-image! image-url)]
-      (println "Parsed article:" text)
-      (println "Orchestrating..."))
+          text (:text article)]
+      (println "Creating audio for" (:title article))
+      (let [tts (audio/text-to-speech! text {:voice (:voice opts)
+                                             :vibe (:vibe opts)})
+            lesson (merge article {:status "private" :tags ["yomiuri" "news"] :level 3 :audio tts :original-url (:url opts)})]
+        (println "Creating lesson:")
+        (println (format "  title: %s\n  url:   %s\n" (:title lesson) (:original-url lesson)))
+        (lingq/create-lesson lesson)))
     (catch clojure.lang.ExceptionInfo e
-      (fail! (ex-message e))))
-  ;; orchestrate here
-  )
+      (fail! (ex-message e)))))
 
 (def dispatch-table
   [{:cmds []

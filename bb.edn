@@ -1,4 +1,4 @@
-{:paths ["scripts" "src"]
+{:paths ["scripts" "src" "test"]
  :deps {org.babashka/cli {:mvn/version "0.9.68"}
         babashka/fs {:mvn/version "0.5.33"}
         hato/hato {:mvn/version "1.0.0"}
