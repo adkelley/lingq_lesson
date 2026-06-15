@@ -1,7 +1,6 @@
 (ns lingq-lesson.lingq
   (:require
    [cheshire.core :as json]
-   [clojure.java.io :as io]
    [clojure.string :as str]
    [hato.client :as hc])
   (:import java.nio.charset.StandardCharsets))
