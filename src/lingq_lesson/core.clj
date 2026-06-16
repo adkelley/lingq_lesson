@@ -67,7 +67,10 @@
       (println "Creating audio for" (:title article))
       (let [tts (audio/text-to-speech! text {:voice (:voice opts)
                                              :vibe (:vibe opts)})
-            lesson (merge article {:status "private" :tags ["yomiuri" "news"] :level 3 :audio tts :original-url (:url opts)})]
+            lesson (merge article {:status "private"
+                                   :level 3
+                                   :audio tts
+                                   :original-url (or (:original-url article) (:url opts))})]
         (println "Creating lesson:")
         (println (format "  title: %s\n  url:   %s\n" (:title lesson) (:original-url lesson)))
         (lingq/create-lesson lesson)))

@@ -117,6 +117,17 @@
 (defn- markdown->text [content-markdown]
   (string/join "\n" (markdown->sentences content-markdown)))
 
+(defn- meta-content-by-property [meta-tags target-property]
+  (some (fn [{:keys [property content]}]
+          (when (= target-property property)
+            content))
+        meta-tags))
+
+(defn- extract-tags [parsed]
+  (let [site-name (or (meta-content-by-property (:metaTags parsed) "og:site_name") "")
+        type (or (meta-content-by-property (:metaTags parsed) "og:type") "")]
+    [site-name type]))
+
 (defn- defuddle->article
   "Map parsed defuddle output into canonical article map"
   [parsed]
@@ -124,6 +135,8 @@
     {:text (markdown->text content-markdown)
      :title (or (:title parsed) "")
      :image (download-image! (or (:image parsed) ""))
+     :tags (extract-tags parsed)
+     :original-url (meta-content-by-property (:metaTags parsed) "og:url")
      :description (or (:description parsed) "")}))
 
 ;; ---------------------------------------------------------------------------

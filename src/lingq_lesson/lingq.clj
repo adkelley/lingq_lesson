@@ -106,7 +106,7 @@
            {:name "level" :content (str level)}
            {:name "tags" :content (str/join "," tags)}
            {:name "description" :content description}
-           {:name "original_url" :content original-url}
+           {:name "originalUrl" :content original-url}
            {:name "save" :content "true"}]))
 
 (defn- post-import-request [multipart]

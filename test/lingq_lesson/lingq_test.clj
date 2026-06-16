@@ -16,4 +16,4 @@
                                             :description "Description"
                                             :original-url "https://example.com/article"})]
     (is (= "https://example.com/article"
-           (part-content multipart "original_url")))))
+           (part-content multipart "originalUrl")))))
