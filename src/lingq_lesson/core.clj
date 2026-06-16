@@ -3,6 +3,7 @@
    [babashka.cli :as cli]
    [lingq-lesson.audio :as audio]
    [lingq-lesson.lingq :as lingq]
+   [lingq-lesson.jlpt-level :as jlpt-level]
    [lingq-lesson.parser :as parser]))
 
 (def ^:private voices #{"alloy" "ash" "ballad" "cedar" "coral" "echo"
@@ -67,8 +68,9 @@
       (println "Creating audio for" (:title article))
       (let [tts (audio/text-to-speech! text {:voice (:voice opts)
                                              :vibe (:vibe opts)})
+            difficulty (jlpt-level/article-text->jlpt-level! text true)
             lesson (merge article {:status "private"
-                                   :level 3
+                                   :level (:lingq-level difficulty)
                                    :audio tts
                                    :original-url (or (:original-url article) (:url opts))})]
         (println "Creating lesson:")

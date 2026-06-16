@@ -218,6 +218,8 @@
             (println "  duration:    " (:duration saved))
             (println "  wordCount:   " (:wordCount saved))
             (println "  tags:        " (:tags saved))
+            (println "  level:       " (:level saved))
+            (println "  title:       " (:title saved))
             (println "  description: " (:description saved)))
           (catch Exception e
             (println "  (verify skipped:" (ex-message e) "— open the URL above)"))))
