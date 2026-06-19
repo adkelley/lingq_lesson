@@ -64,18 +64,23 @@
   ;; (println "Your opts:" opts)
   (try
     (let [article (parser/parse-article (:url opts))
-          text (:text article)]
-      (println "Creating audio for" (:title article))
-      (let [tts (audio/text-to-speech! text {:voice (:voice opts)
-                                             :vibe (:vibe opts)})
-            difficulty (jlpt-level/article-text->jlpt-level! text true)
-            lesson (merge article {:status "private"
-                                   :level (:lingq-level difficulty)
-                                   :audio tts
-                                   :original-url (or (:original-url article) (:url opts))})]
-        (println "Creating lesson:")
-        (println (format "  title: %s\n  url:   %s\n" (:title lesson) (:original-url lesson)))
-        (lingq/create-lesson lesson)))
+          text (:text article)
+          tts-future (future
+                       (println "Creating audio for" (:title article))
+                       (audio/text-to-speech! text {:voice (:voice opts)
+                                                    :vibe (:vibe opts)}))
+          difficulty-future (future
+                              (println "Assessing difficulty for" (:title article))
+                              (jlpt-level/article-text->jlpt-level! text true))
+          tts @tts-future
+          difficulty @difficulty-future
+          lesson (merge article {:status "private"
+                                 :level (:lingq-level difficulty)
+                                 :audio tts
+                                 :original-url (or (:original-url article) (:url opts))})]
+      (println "Creating lesson:")
+      (println (format "  title: %s\n  url:   %s\n" (:title lesson) (:original-url lesson)))
+      (lingq/create-lesson lesson))
     (catch clojure.lang.ExceptionInfo e
       (fail! (ex-message e)))))
 
