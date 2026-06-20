@@ -65,12 +65,13 @@
   (try
     (let [article (parser/parse-article (:url opts))
           text (:text article)
+          title (:title article)
           tts-future (future
-                       (println "Creating audio for" (:title article))
-                       (audio/text-to-speech! text {:voice (:voice opts)
-                                                    :vibe (:vibe opts)}))
+                       (println "Creating audio for" title)
+                       (audio/text-to-speech! (str title "\n\n" text) {:voice (:voice opts)
+                                                                       :vibe (:vibe opts)}))
           difficulty-future (future
-                              (println "Assessing difficulty for" (:title article))
+                              (println "Assessing difficulty for" title)
                               (jlpt-level/article-text->jlpt-level! text true))
           tts @tts-future
           difficulty @difficulty-future
