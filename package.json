@@ -1,17 +1,15 @@
 {
   "name": "lingq_lesson",
   "version": "0.1.0",
-  "description": "Scripts for creating lessons on Lingq",
-  "license": "ISC",
+  "description": "Create LingQ lessons from article URLs",
+  "license": "Apache-2.0",
   "author": "Alex Kelley",
-  "type": "commonjs",
-  "main": "index.js",
   "scripts": {
     "clean": "rm -rf node_modules",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "fmt:check": "clojure -M:fmt check src test scripts",
+    "test": "bb test"
   },
   "dependencies": {
     "defuddle": "^0.18.1"
-  },
-  "devDependencies": {}
+  }
 }
