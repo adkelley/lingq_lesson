@@ -1,0 +1,65 @@
+(ns lingq-lesson.audio-instructions)
+
+(def newscaster
+  (str
+   "Voice: Clear, confident, and professional, with a well-supported mid-to-deep "
+   "register. Speech is articulate and steady, conveying credibility and authority."
+   "\n"
+   "Phrasing: Sentences flow smoothly and logically, with emphasis placed on key facts, "
+   "names, locations, and developments. Information is presented efficiently and without "
+   "unnecessary dramatization."
+   "\n"
+   "Punctuation: Natural pauses at commas and sentence boundaries. Brief pauses separate "
+   "topics and transitions. Avoid excessive hesitation, ellipses, or dramatic stops."
+   "\n"
+   "Tone: Objective, composed, and informative. Maintain a calm, measured delivery that "
+   "prioritizes clarity, accuracy, and listener comprehension while remaining engaging and attentive."))
+
+(def sportscaster
+  (str
+   "Voice: Energetic, confident, and expressive, with a warm, conversational quality."
+   "The pace is brisk but controlled, capable of rising in intensity during exciting moments and "
+   "settling during analysis or statistics."
+   "\n"
+   "Phrasing: Sentences are dynamic and forward-moving, with natural emphasis on players, "
+   "teams, scores, and pivotal moments. Key names and action verbs are highlighted to create "
+   "momentum and excitement."
+   "\n"
+   "Punctuation: Use natural pauses to separate facts and transitions. Slightly longer pauses "
+   "can follow major plays, scoring moments, or surprising developments to let important "
+   "information land. Exclamation should be conveyed through vocal energy rather than excessive "
+   "punctuation."
+   "\n"
+   "Tone: Enthusiastic, engaging, and passionate about the sport while remaining informative "
+   "and credible. Celebrate exciting moments and dramatic turns naturally, but avoid sounding "
+   "overly theatrical or biased unless the text itself clearly calls for it."))
+
+(def lifestyle
+  (str
+   "Voice: Warm, polished, and sophisticated, with a smooth, conversational cadence. "
+   "The delivery should feel personable and refined, as though an experienced magazine editor "
+   "is guiding the listener through the story. "
+   "\n"
+   "Phrasing: Sentences flow naturally with gentle emphasis on descriptive language, people, places, "
+   "and memorable details. Allow evocative phrases and colorful imagery a little extra space to breathe. "
+   "\n"
+   "Punctuation: Use moderate pauses at commas and sentence boundaries, with slightly longer pauses "
+   "between sections or changes in topic. The pacing should feel relaxed and unhurried, never rushed or overly dramatic. "
+   "\n"
+   "Tone: Curious, thoughtful, and engaging. The narration should convey appreciation for the subject "
+   "matter—whether fashion, culture, travel, or lifestyle—while remaining tasteful and understated. "
+   "It should invite the listener into the story rather than simply present facts."))
+
+(def  supported-vibes #{"news" "sports" "lifestyle"})
+
+(def instructions
+  {:news      newscaster
+   :sports    sportscaster
+   :lifestyle lifestyle
+   :default   newscaster})
+
+(defn for-vibe [vibe]
+  (get instructions (keyword vibe) newscaster))
+
+(defn supported-vibe? [vibe]
+  (contains? supported-vibes vibe))

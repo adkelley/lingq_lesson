@@ -18,9 +18,15 @@ Optional flags:
 ```sh
 bb lingq \
   --url https://example.com/article \
-  --voice cedar \
-  --vibe newscaster
+  --voice alloy, echo, onyx, nova, shimmer \
+  --vibe news, sports, lifestyle
 ```
+
+Supported voices: `alloy` (male), `echo` (male), `onyx` (male), `nova` (female), `shimmer` (female).
+
+Recommended vibe -> voice: `news` -> `alloy`, `sports` -> `echo`, `lifestyle` -> `nova`.
+
+If no vibe or voice is specified, `news` is used for the vibe and the TTS voice defaults to `alloy`.
 
 Print help:
 
@@ -155,15 +161,15 @@ test/                        Regression tests
 - status: `private`
 - level: estimated from article text
 - tags: extracted from article metadata
-- voice: `cedar`
-- vibe: `newscaster`
+- voice: `alloy`
+- vibe: `news`
 - TTS model: `gpt-4o-mini-tts`
 - JLPT model: `gpt-5-mini`
 
 Supported voices:
 
 ```text
-alloy ash ballad cedar coral echo fable marin nova onyx sage verse
+alloy echo nova onyx shimmer
 ```
 
 ## Notes

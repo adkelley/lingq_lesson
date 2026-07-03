@@ -2,26 +2,10 @@
   (:require
    [babashka.cli :as cli]
    [lingq-lesson.audio :as audio]
+   [lingq-lesson.audio-instructions :as audio-instructions]
    [lingq-lesson.lingq :as lingq]
    [lingq-lesson.jlpt-level :as jlpt-level]
    [lingq-lesson.parser :as parser]))
-
-(def ^:private voices #{"alloy" "ash" "ballad" "cedar" "coral" "echo"
-                        "fable" "marin" "nova" "onyx" "sage" "verse"})
-
-(def ^:private default-voice "cedar")
-
-(defn- valid-voice?
-  [voice]
-  (contains? voices voice))
-
-;; Vibe
-
-(def ^:private vibes #{"newscaster"})
-
-(defn- valid-vibe?
-  [vibe]
-  (contains? vibes vibe))
 
 (defn valid-url?
   [s]
@@ -40,12 +24,12 @@
                   :validate {:pred valid-url?
                              :ex-msg (fn [{:keys [value]}]
                                        (str "Invalid URL: " value))}}
-   :voice        {:desc "Voice to use"
-                  :default default-voice
-                  :validate valid-voice?}
-   :vibe         {:desc "Voice/style instructions"
-                  :default "newscaster"
-                  :validate valid-vibe?}})
+   :voice        {:desc "Voice to use (alloy, echo, nova, onyx, shimmer)"
+                  :default audio/default-voice
+                  :validate audio/supported-voice?}
+   :vibe         {:desc "Voice/style instructions (news, sports, lifestyle)"
+                  :default "news"
+                  :validate audio-instructions/supported-vibe?}})
 
 (def help-spec
   (assoc option-spec
@@ -59,6 +43,14 @@
     (println (str "Error: " msg)))
   (System/exit 1))
 
+(def ^:private status-output-lock (Object.))
+
+(defn- println-status
+  [msg]
+  (locking status-output-lock
+    (println msg)
+    (flush)))
+
 (defn run
   [{:keys [opts]}]
   ;; (println "Your opts:" opts)
@@ -67,11 +59,11 @@
           text (:text article)
           title (:title article)
           tts-future (future
-                       (println "Creating audio for" title)
+                       (println-status (str "Creating audio for " title))
                        (audio/text-to-speech! (str title "\n\n" text) {:voice (:voice opts)
                                                                        :vibe (:vibe opts)}))
           difficulty-future (future
-                              (println "Assessing difficulty for" title)
+                              (println-status (str "Assessing difficulty for " title))
                               (jlpt-level/article-text->jlpt-level! text true))
           tts @tts-future
           difficulty @difficulty-future
