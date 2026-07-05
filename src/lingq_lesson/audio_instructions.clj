@@ -1,4 +1,6 @@
-(ns lingq-lesson.audio-instructions)
+(ns lingq-lesson.audio-instructions
+  (:require
+   [clojure.string :as str]))
 
 (def newscaster
   (str
@@ -50,12 +52,31 @@
    "matter—whether fashion, culture, travel, or lifestyle—while remaining tasteful and understated. "
    "It should invite the listener into the story rather than simply present facts."))
 
-(def  supported-vibes #{"news" "sports" "lifestyle"})
+(def technology
+  (str
+   "Voice: Clear, intelligent, and confident, with a calm, conversational cadence. The delivery "
+   "should sound knowledgeable and approachable, as though an experienced technology journalist is "
+   "explaining important developments to an informed audience."
+   "\n"
+   "Phrasing: Sentences flow smoothly and logically, with natural emphasis on technical terms, company names, "
+   "product names, and key concepts. Slow slightly for English loanwords, acronyms, version numbers, and unfamiliar "
+   "terminology to aid comprehension. Complex ideas should be presented in a measured, easy-to-follow manner."
+   "\n"
+   "Punctuation: Use natural pauses at commas and sentence boundaries, with slightly longer pauses before introducing "
+   "major announcements, new technologies, or significant implications. Pauses should support comprehension rather than "
+   "create drama or suspense."
+   "\n"
+   "Tone: Thoughtful, curious, and forward-looking. Maintain a professional and credible demeanor while conveying "
+   "genuine interest in innovation and technology. The narration should make complex subjects feel accessible and "
+   "intellectually stimulating without sounding promotional, sensational, or overly excited."))
+
+(def  supported-vibes #{"news" "sports" "lifestyle" "technology"})
 
 (def instructions
   {:news      newscaster
    :sports    sportscaster
    :lifestyle lifestyle
+   :technology technology
    :default   newscaster})
 
 (defn for-vibe [vibe]

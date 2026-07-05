@@ -33,7 +33,7 @@
    :voice        {:desc "Voice to use (alloy, echo, nova, onyx, shimmer)"
                   :default audio/default-voice
                   :validate audio/supported-voice?}
-   :vibe         {:desc "Voice/style instructions (news, sports, lifestyle)"
+   :vibe         {:desc "Voice/style instructions (news, sports, lifestyle, technology)"
                   :default "news"
                   :validate audio-instructions/supported-vibe?}})
 
