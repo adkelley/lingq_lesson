@@ -1,11 +1,17 @@
 (ns lingq-lesson.core
   (:require
-   [babashka.cli :as cli]
+   [babashka.deps :as deps]
    [lingq-lesson.audio :as audio]
    [lingq-lesson.audio-instructions :as audio-instructions]
    [lingq-lesson.lingq :as lingq]
    [lingq-lesson.jlpt-level :as jlpt-level]
    [lingq-lesson.parser :as parser]))
+
+;; bb currently bundles an older babashka.cli; add and reload the newer
+;; version so automatic help/completions are available before dispatch.
+;; Remove this once Babashka ships with babashka.cli 0.12.75 or newer.
+(deps/add-deps '{:deps {org.babashka/cli {:mvn/version "0.12.75"}}})
+(require '[babashka.cli :as cli] :reload)
 
 (defn valid-url?
   [s]
@@ -16,9 +22,9 @@
     (catch Exception _
       false)))
 
-(def app-doc "Create a Linq lesson from an article URL.")
+(def app-doc "Create a LingQ lesson from an article URL.")
 
-(def option-spec
+(def spec
   {:url          {:desc "URL article"
                   :require true
                   :validate {:pred valid-url?
@@ -30,12 +36,6 @@
    :vibe         {:desc "Voice/style instructions (news, sports, lifestyle)"
                   :default "news"
                   :validate audio-instructions/supported-vibe?}})
-
-(def help-spec
-  (assoc option-spec
-         :help {:alias :h
-                :coerce :boolean
-                :desc "Show help"}))
 
 (defn- fail!
   [msg]
@@ -81,20 +81,7 @@
   [{:cmds []
     :fn run
     :doc app-doc
-    :spec option-spec}])
-
-(defn- help?
-  [args]
-  (some #{"--help" "-h"} args))
-
-(defn- print-help
-  []
-  (println "Usage: linq_lesson [options]")
-  (println)
-  (println app-doc)
-  (println)
-  (println "Options:")
-  (println (cli/format-opts {:spec help-spec})))
+    :spec spec}])
 
 (defn- print-error!
   [{:keys [msg]}]
@@ -105,14 +92,14 @@
   (System/exit 1))
 
 (defn -main [& args]
-  (if (help? args)
-    (print-help)
-    (cli/dispatch
-     dispatch-table
-     args
-     {:prog "linq-lesson"
-      :help true
-      :error-fn print-error!})))
+  (cli/dispatch
+   dispatch-table
+   args
+   {:prog "lingq-lesson"
+    :help true
+    :error-fn print-error!}))
 
+;; Only run the CLI when this file is executed directly by bb.
+;; Requiring this namespace from a REPL/editor should not dispatch -main.
 (when (= *file* (System/getProperty "babashka.file"))
   (apply -main *command-line-args*))
