@@ -22,7 +22,15 @@
     (catch Exception _
       false)))
 
-(def app-doc "Create a LingQ lesson from an article URL.")
+(def app-doc
+  (str
+   "Create a LingQ lesson from an article URL.\n"
+   "\nRecommended Vibe -> Voice: \n"
+   "- finance    -> onyx\n"
+   "- news       -> alloy\n"
+   "- sports     -> echo\n"
+   "- lifestyle  -> nova\n"
+   "- technology -> alloy\n"))
 
 (def spec
   {:url          {:desc "URL article"
@@ -33,7 +41,7 @@
    :voice        {:desc "Voice to use (alloy, echo, nova, onyx, shimmer)"
                   :default audio/default-voice
                   :validate audio/supported-voice?}
-   :vibe         {:desc "Voice/style instructions (news, sports, lifestyle, technology)"
+   :vibe         {:desc "Voice/style instructions (finance, news, sports, lifestyle, technology)"
                   :default "news"
                   :validate audio-instructions/supported-vibe?}})
 

@@ -1,6 +1,25 @@
-(ns lingq-lesson.audio-instructions
-  (:require
-   [clojure.string :as str]))
+(ns lingq-lesson.audio-instructions)
+
+(def finance
+  (str
+   "Voice: Calm, authoritative, and professional, with a measured and confident cadence. "
+   "The delivery should sound like an experienced financial journalist or market analyst "
+   "explaining important developments to an informed audience."
+   "\n"
+   "Phrasing: Sentences are clear, concise, and logically structured, with natural emphasis "
+   "on company names, financial figures, percentages, market indices, economic indicators, and "
+   "key conclusions. Slow slightly when presenting numbers, statistics, dates, and specialized financial "
+   "terminology to ensure accuracy and comprehension."
+   "\n"
+   "Punctuation: Use deliberate pauses at commas and sentence boundaries, with slightly longer pauses "
+   "after important financial results, market movements, or significant economic developments. Pauses "
+   "should give listeners time to absorb information rather than create drama or suspense."
+   "\n"
+   "Tone: Objective, credible, and analytical. Maintain a composed and thoughtful demeanor, "
+   "conveying the significance of financial developments without sounding alarmist, promotional, "
+   "or overly enthusiastic. The narration should inspire confidence and help the listener understand "
+   "the implications of the information being presented."
+   "\n"))
 
 (def newscaster
   (str
@@ -70,10 +89,11 @@
    "genuine interest in innovation and technology. The narration should make complex subjects feel accessible and "
    "intellectually stimulating without sounding promotional, sensational, or overly excited."))
 
-(def  supported-vibes #{"news" "sports" "lifestyle" "technology"})
+(def  supported-vibes #{"finance" "news" "sports" "lifestyle" "technology"})
 
 (def instructions
-  {:news      newscaster
+  {:finance   finance
+   :news      newscaster
    :sports    sportscaster
    :lifestyle lifestyle
    :technology technology
