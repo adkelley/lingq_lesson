@@ -19,12 +19,12 @@ Optional flags:
 bb lingq \
   --url https://example.com/article \
   --voice alloy, echo, onyx, nova, shimmer \
-  --vibe finance, news, sports, lifestyle, technology
+  --vibe business, news, sports, lifestyle, technology
 ```
 
 Supported voices: `alloy` (male), `echo` (male), `onyx` (male), `nova` (female), `shimmer` (female).
 
-Recommended vibe -> voice: `finance` -> `onyx`, `news` -> `alloy`, `sports` -> `echo`, `lifestyle` -> `nova`, `technology` -> `alloy`.
+Recommended vibe -> voice: `business` -> `onyx`, `news` -> `alloy`, `sports` -> `echo`, `lifestyle` -> `nova`, `technology` -> `alloy`.
 
 If no vibe or voice is specified, `news` is used for the vibe and the TTS voice defaults to `alloy`.
 

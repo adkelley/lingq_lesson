@@ -1,5 +1,6 @@
 (ns lingq-lesson.core
   (:require
+   [clojure.string :as str]
    [babashka.deps :as deps]
    [lingq-lesson.audio :as audio]
    [lingq-lesson.audio-instructions :as audio-instructions]
@@ -13,6 +14,16 @@
 (deps/add-deps '{:deps {org.babashka/cli {:mvn/version "0.12.75"}}})
 (require '[babashka.cli :as cli] :reload)
 
+(def app-doc
+  (str
+   "Create a LingQ lesson from an article URL.\n"
+   "\nRecommended Vibe -> Voice: \n"
+   "- business   -> onyx\n"
+   "- news       -> alloy\n"
+   "- sports     -> echo\n"
+   "- lifestyle  -> nova\n"
+   "- technology -> alloy\n"))
+
 (defn valid-url?
   [s]
   (try
@@ -22,15 +33,9 @@
     (catch Exception _
       false)))
 
-(def app-doc
-  (str
-   "Create a LingQ lesson from an article URL.\n"
-   "\nRecommended Vibe -> Voice: \n"
-   "- finance    -> onyx\n"
-   "- news       -> alloy\n"
-   "- sports     -> echo\n"
-   "- lifestyle  -> nova\n"
-   "- technology -> alloy\n"))
+(defn supported-values-desc
+  [values]
+  (str "(" (str/join ", " (sort values)) ")"))
 
 (def spec
   {:url          {:desc "URL article"
@@ -38,10 +43,10 @@
                   :validate {:pred valid-url?
                              :ex-msg (fn [{:keys [value]}]
                                        (str "Invalid URL: " value))}}
-   :voice        {:desc "Voice to use (alloy, echo, nova, onyx, shimmer)"
+   :voice        {:desc (str "Voice to use " (supported-values-desc audio/voices))
                   :default audio/default-voice
                   :validate audio/supported-voice?}
-   :vibe         {:desc "Voice/style instructions (finance, news, sports, lifestyle, technology)"
+   :vibe         {:desc (str "Voice/style instructions " (supported-values-desc audio-instructions/supported-vibes))
                   :default "news"
                   :validate audio-instructions/supported-vibe?}})
 
