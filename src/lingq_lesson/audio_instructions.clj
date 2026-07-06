@@ -101,7 +101,7 @@
    :default   newscaster})
 
 (defn for-vibe [vibe]
-  (get instructions (keyword vibe) newscaster))
+  (get instructions (keyword vibe)))
 
 (defn supported-vibe? [vibe]
   (contains? supported-vibes vibe))

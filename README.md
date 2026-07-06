@@ -18,15 +18,59 @@ Optional flags:
 ```sh
 bb lingq \
   --url https://example.com/article \
-  --voice alloy, echo, onyx, nova, shimmer \
-  --vibe business, news, sports, lifestyle, technology
+  --voice alloy \
+  --vibe news
 ```
 
 Supported voices: `alloy` (male), `echo` (male), `onyx` (male), `nova` (female), `shimmer` (female).
 
-Recommended vibe -> voice: `business` -> `onyx`, `news` -> `alloy`, `sports` -> `echo`, `lifestyle` -> `nova`, `technology` -> `alloy`.
+Supported vibes: `business`, `news`, `sports`, `lifestyle`, `technology`.
 
-If no vibe or voice is specified, `news` is used for the vibe and the TTS voice defaults to `alloy`.
+OpenAI intentionally describes the TTS voices in terms of their character and sound, 
+not as explicitly male or female. That said, most listeners perceive them roughly as follows:
+
+OpenAI intentionally describes the TTS voices in terms of their character and sound, not as explicitly male or female. That said, most listeners perceive them roughly as follows:
+
+Voice | Common Perception | Characteristics
+--- | --- | ---
+alloy | Male-leaning / androgynous | Neutral, professional, versatile
+onyx | Male | Deep, authoritative, documentary-style
+echo | Male | Energetic, conversational, expressive
+nova | Female | Warm, friendly, approachable
+shimmer | Female | Soft, polished, refined
+
+The recommended vibe/voice pairs are:
+
+Vibe | Voice
+--- | ---
+`business` | `onyx`
+`news` | `alloy`
+`sports` | `echo`
+`lifestyle` | `nova`
+`technology` | `alloy`
+
+If neither `--vibe` nor `--voice` is specified, the app classifies the article
+style with OpenAI and chooses a recommended vibe/voice pair automatically.
+
+If `--vibe` is specified, automatic style classification is skipped. 
+If `--voice` is unspecified, then a voice is selected based on the vibe. Any missing value falls back to the default: `news` for vibe and
+`alloy` for voice.
+
+Examples:
+
+```sh
+# Auto-classify article style and choose voice.
+bb lingq --url https://example.com/article
+
+# Force only the vibe; voice falls back to alloy.
+bb lingq --url https://example.com/article --vibe technology
+
+# Force only the voice; vibe is inferred from the article style.
+bb lingq --url https://example.com/article --voice nova
+
+# Force both values.
+bb lingq --url https://example.com/article --vibe lifestyle --voice nova
+```
 
 Print help:
 
@@ -161,8 +205,8 @@ test/                        Regression tests
 - status: `private`
 - level: estimated from article text
 - tags: extracted from article metadata
-- voice: `alloy`
-- vibe: `news`
+- voice: auto-classified unless `--voice` or `--vibe` is provided; fallback `alloy`
+- vibe: auto-classified unless `--voice` or `--vibe` is provided; fallback `news`
 - TTS model: `gpt-4o-mini-tts`
 - JLPT model: `gpt-5-mini`
 

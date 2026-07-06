@@ -6,8 +6,6 @@
 
 (def voices #{"alloy" "echo" "nova" "onyx" "shimmer"})
 
-(def default-voice "alloy")
-
 (defn supported-voice?
   [voice]
   (contains? voices voice))

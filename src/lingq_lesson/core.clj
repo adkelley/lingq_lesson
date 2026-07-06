@@ -5,6 +5,7 @@
    [lingq-lesson.audio :as audio]
    [lingq-lesson.audio-instructions :as audio-instructions]
    [lingq-lesson.lingq :as lingq]
+   [lingq-lesson.style-classifier :as style-classifier]
    [lingq-lesson.jlpt-level :as jlpt-level]
    [lingq-lesson.parser :as parser]))
 
@@ -44,10 +45,10 @@
                              :ex-msg (fn [{:keys [value]}]
                                        (str "Invalid URL: " value))}}
    :voice        {:desc (str "Voice to use " (supported-values-desc audio/voices))
-                  :default audio/default-voice
+                  :require false
                   :validate audio/supported-voice?}
    :vibe         {:desc (str "Voice/style instructions " (supported-values-desc audio-instructions/supported-vibes))
-                  :default "news"
+                  :require false
                   :validate audio-instructions/supported-vibe?}})
 
 (defn- fail!
@@ -64,6 +65,28 @@
     (println msg)
     (flush)))
 
+(defn- resolve-voice
+  [vibe]
+  (case vibe
+    "business" "onyx"
+    "lifestyle" "nova"
+    "news" "alloy"
+    "sports" "echo"
+    "technology" "alloy"
+    "other" "alloy"
+    "alloy"))
+
+(defn- resolve-vibe!
+  ([article-text] (resolve-vibe! article-text false))
+  ([article-text verbose]
+   (:vibe (style-classifier/article-text->style! article-text verbose))))
+
+(defn- resolve-style-opts!
+  [text opts verbose]
+  (let [vibe (or (:vibe opts) (resolve-vibe! text verbose))
+        voice (or (:voice opts) (resolve-voice vibe))]
+    {:vibe vibe :voice voice}))
+
 (defn run
   [{:keys [opts]}]
   ;; (println "Your opts:" opts)
@@ -72,9 +95,10 @@
           text (:text article)
           title (:title article)
           tts-future (future
-                       (println-status (str "Creating audio for " title))
-                       (audio/text-to-speech! (str title "\n\n" text) {:voice (:voice opts)
-                                                                       :vibe (:vibe opts)}))
+                       (let [{:keys [vibe voice]} (resolve-style-opts! text opts true)]
+                         (println-status (str "Creating audio for " title " with style: " vibe " and voice: " voice))
+                         (audio/text-to-speech! (str title "\n\n" text) {:voice voice
+                                                                         :vibe vibe})))
           difficulty-future (future
                               (println-status (str "Assessing difficulty for " title))
                               (jlpt-level/article-text->jlpt-level! text true))
