@@ -97,11 +97,10 @@
    :news      newscaster
    :sports    sportscaster
    :lifestyle lifestyle
-   :technology technology
-   :default   newscaster})
+   :technology technology})
 
 (defn for-vibe [vibe]
-  (get instructions (keyword vibe)))
+  (get instructions (keyword vibe) newscaster))
 
 (defn supported-vibe? [vibe]
   (contains? supported-vibes vibe))
