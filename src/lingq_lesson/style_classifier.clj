@@ -42,6 +42,8 @@
    "Classify the article into exactly one of the following categories:"
    "\n"
    "  * business\n"
+   "  * crime\n"
+   "  * entertainment\n"
    "  * sports\n"
    "  * technology\n"
    "  * lifestyle\n"

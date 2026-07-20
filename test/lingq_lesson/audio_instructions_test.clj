@@ -5,6 +5,8 @@
 
 (deftest supported-vibe-recognizes-public-vibes
   (is (audio-instructions/supported-vibe? "news"))
+  (is (audio-instructions/supported-vibe? "crime"))
+  (is (audio-instructions/supported-vibe? "entertainment"))
   (is (audio-instructions/supported-vibe? "sports"))
   (is (audio-instructions/supported-vibe? "lifestyle"))
   (is (not (audio-instructions/supported-vibe? "default")))
@@ -16,7 +18,11 @@
   (is (= audio-instructions/sportscaster
          (audio-instructions/for-vibe "sports")))
   (is (= audio-instructions/lifestyle
-         (audio-instructions/for-vibe "lifestyle"))))
+         (audio-instructions/for-vibe "lifestyle")))
+  (is (= audio-instructions/crime
+         (audio-instructions/for-vibe "crime")))
+  (is (= audio-instructions/entertainment
+         (audio-instructions/for-vibe "entertainment"))))
 
 (deftest for-vibe-falls-back-to-newscaster
   (is (= audio-instructions/newscaster

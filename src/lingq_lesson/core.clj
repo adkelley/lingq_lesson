@@ -20,6 +20,8 @@
    "Create a LingQ lesson from an article URL.\n"
    "\nRecommended Vibe -> Voice: \n"
    "- business   -> onyx\n"
+   "- crime      -> onyx\n"
+   "- entertainment -> nova\n"
    "- news       -> alloy\n"
    "- sports     -> echo\n"
    "- lifestyle  -> nova\n"
@@ -69,6 +71,8 @@
   [vibe]
   (case vibe
     "business" "onyx"
+    "crime" "onyx"
+    "entertainment" "nova"
     "lifestyle" "nova"
     "news" "alloy"
     "sports" "echo"
@@ -85,6 +89,8 @@
   [text opts verbose]
   (let [vibe (or (:vibe opts) (resolve-vibe! text verbose))
         voice (or (:voice opts) (resolve-voice vibe))]
+  (when verbose
+    (println-status "Assessing article vibe and style"))
     {:vibe vibe :voice voice}))
 
 (defn run

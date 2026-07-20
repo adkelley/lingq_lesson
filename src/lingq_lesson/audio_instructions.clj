@@ -90,13 +90,49 @@
    "genuine interest in innovation and technology. The narration should make complex subjects feel accessible and "
    "intellectually stimulating without sounding promotional, sensational, or overly excited."))
 
-(def  supported-vibes #{"business" "news" "sports" "lifestyle" "technology"})
+(def crime
+  (str
+   "Voice: Serious, clear, and precise, with a steady, restrained cadence. The delivery should "
+   "sound like an experienced crime or courts reporter presenting carefully verified information."
+   "\n"
+   "Phrasing: Sentences should be deliberate and easy to follow, with natural emphasis on names, "
+   "locations, timelines, legal terms, and verified facts. Distinguish allegations, charges, and "
+   "convictions through neutral, accurate phrasing, without implying guilt beyond what the text states."
+   "\n"
+   "Punctuation: Use measured pauses at commas and sentence boundaries, with slightly longer pauses "
+   "between major developments or changes in chronology. Pauses should support comprehension and "
+   "clarity rather than create suspense or heighten fear."
+   "\n"
+   "Tone: Objective, respectful, and composed. Treat victims, families, suspects, and sensitive events "
+   "with care while conveying the seriousness of the subject. Avoid sensationalism, emotional "
+   "exploitation, theatrical tension, or lurid emphasis."))
+
+(def entertainment
+  (str
+   "Voice: Polished, lively, and confident, with a warm, conversational cadence. The delivery should "
+   "sound like an experienced entertainment journalist who is informed, engaging, and at ease with the subject."
+   "\n"
+   "Phrasing: Sentences should flow naturally, with clear emphasis on titles, performers, creators, "
+   "release dates, awards, and cultural context. Give memorable details and quotations enough space "
+   "to land while keeping the story moving at an energetic but controlled pace."
+   "\n"
+   "Punctuation: Use natural pauses at commas and sentence boundaries, with slightly longer pauses "
+   "between topics, reviews, announcements, or changes in perspective. Let vocal variety create "
+   "interest without relying on exaggerated stops or excessive exclamation."
+   "\n"
+   "Tone: Engaging, curious, and upbeat while remaining credible and tasteful. Convey genuine interest "
+   "in film, television, music, celebrities, awards, and popular culture without sounding promotional, "
+   "overly excited, or theatrically gossipy."))
+
+(def  supported-vibes #{"business" "crime" "entertainment" "news" "sports" "lifestyle" "technology"})
 
 (def instructions
-  {:business   business
-   :news      newscaster
-   :sports    sportscaster
-   :lifestyle lifestyle
+  {:business    business
+   :crime       crime
+   :entertainment entertainment
+   :news        newscaster
+   :sports      sportscaster
+   :lifestyle   lifestyle
    :technology technology})
 
 (defn for-vibe [vibe]
