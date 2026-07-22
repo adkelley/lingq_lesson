@@ -34,8 +34,6 @@ Supported vibes: `business`, `news`, `sports`, `lifestyle`, `technology`.
 OpenAI intentionally describes the TTS voices in terms of their character and sound, 
 not as explicitly male or female. That said, most listeners perceive them roughly as follows:
 
-OpenAI intentionally describes the TTS voices in terms of their character and sound, not as explicitly male or female. That said, most listeners perceive them roughly as follows:
-
 Voice | Common Perception | Characteristics
 --- | --- | ---
 alloy | Male-leaning / androgynous | Neutral, professional, versatile
