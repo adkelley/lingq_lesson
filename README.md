@@ -19,8 +19,13 @@ Optional flags:
 bb lingq \
   --url https://example.com/article \
   --voice alloy \
-  --vibe news
+  --vibe news \
+  --silent
 ```
+
+Use `--silent` to suppress the detailed style-classification and JLPT analysis
+output. Pipeline progress messages remain visible so you can still follow the
+lesson creation process.
 
 Supported voices: `alloy` (male), `echo` (male), `onyx` (male), `nova` (female), `shimmer` (female).
 
@@ -70,6 +75,9 @@ bb lingq --url https://example.com/article --voice nova
 
 # Force both values.
 bb lingq --url https://example.com/article --vibe lifestyle --voice nova
+
+# Hide detailed analysis while retaining pipeline progress messages.
+bb lingq --url https://example.com/article --silent
 ```
 
 Print help:

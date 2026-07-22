@@ -51,7 +51,11 @@
                   :validate audio/supported-voice?}
    :vibe         {:desc (str "Voice/style instructions " (supported-values-desc audio-instructions/supported-vibes))
                   :require false
-                  :validate audio-instructions/supported-vibe?}})
+                  :validate audio-instructions/supported-vibe?}
+   :silent     {:desc "Silent mode"
+                  :require false
+                  :default false
+                  :validate boolean?}})
 
 (defn- fail!
   [msg]
@@ -89,25 +93,26 @@
   [text opts verbose]
   (let [vibe (or (:vibe opts) (resolve-vibe! text verbose))
         voice (or (:voice opts) (resolve-voice vibe))]
-  (when verbose
-    (println-status "Assessing article vibe and style"))
+    (when verbose
+      (println-status "Assessing article vibe and style"))
     {:vibe vibe :voice voice}))
 
 (defn run
   [{:keys [opts]}]
   ;; (println "Your opts:" opts)
   (try
-    (let [article (parser/parse-article (:url opts))
+    (let [verbose (not (:silent opts))
+          article (parser/parse-article (:url opts))
           text (:text article)
           title (:title article)
           tts-future (future
-                       (let [{:keys [vibe voice]} (resolve-style-opts! text opts true)]
+                       (let [{:keys [vibe voice]} (resolve-style-opts! text opts verbose)]
                          (println-status (str "Creating audio for " title " with style: " vibe " and voice: " voice))
                          (audio/text-to-speech! (str title "\n\n" text) {:voice voice
                                                                          :vibe vibe})))
           difficulty-future (future
                               (println-status (str "Assessing difficulty for " title))
-                              (jlpt-level/article-text->jlpt-level! text true))
+                              (jlpt-level/article-text->jlpt-level! text verbose))
           tts @tts-future
           difficulty @difficulty-future
           lesson (merge article {:status "private"
