@@ -52,7 +52,7 @@
    :vibe         {:desc (str "Voice/style instructions " (supported-values-desc audio-instructions/supported-vibes))
                   :require false
                   :validate audio-instructions/supported-vibe?}
-   :silent     {:desc "Silent mode"
+   :silent       {:desc "Silent mode"
                   :require false
                   :default false
                   :validate boolean?}})
