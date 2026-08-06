@@ -9,11 +9,11 @@
    [lingq-lesson.jlpt-level :as jlpt-level]
    [lingq-lesson.parser :as parser]))
 
-;; bb currently bundles an older babashka.cli; add and reload the newer
-;; version so automatic help/completions are available before dispatch.
-;; Remove this once Babashka ships with babashka.cli 0.12.75 or newer.
-(deps/add-deps '{:deps {org.babashka/cli {:mvn/version "0.12.75"}}})
-(require '[babashka.cli :as cli] :reload)
+; bb currently bundles an older babashka.cli; add and reload the newer
+; version so automatic help/completions are available before dispatch.
+; Remove this once Babashka ships with babashka.cli 0.12.75 or newer.
+ (deps/add-deps '{:deps {org.babashka/cli {:mvn/version "0.12.85"}}})
+ (require '[babashka.cli :as cli] :reload)
 
 (def app-doc
   (str
