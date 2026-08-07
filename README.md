@@ -10,14 +10,14 @@ text-to-speech audio, and posts a private Japanese lesson to LingQ.
 ## Usage
 
 ```sh
-bb lingq --url https://example.com/article
+bb lingq url https://example.com/article
 ```
 
-Optional flags:
+The `url` command takes the article URL as its required positional argument.
+Optional flags may follow it:
 
 ```sh
-bb lingq \
-  --url https://example.com/article \
+bb lingq url https://example.com/article \
   --voice alloy \
   --vibe news \
   --silent
@@ -63,25 +63,26 @@ Examples:
 
 ```sh
 # Auto-classify article style and choose voice.
-bb lingq --url https://example.com/article
+bb lingq url https://example.com/article
 
 # Force only the vibe; voice falls back to alloy.
-bb lingq --url https://example.com/article --vibe technology
+bb lingq url https://example.com/article --vibe technology
 
 # Force only the voice; vibe is inferred from the article style.
-bb lingq --url https://example.com/article --voice nova
+bb lingq url https://example.com/article --voice nova
 
 # Force both values.
-bb lingq --url https://example.com/article --vibe lifestyle --voice nova
+bb lingq url https://example.com/article --vibe lifestyle --voice nova
 
 # Hide detailed analysis while retaining pipeline progress messages.
-bb lingq --url https://example.com/article --silent
+bb lingq url https://example.com/article --silent
 ```
 
-Print help:
+Print general or command-specific help:
 
 ```sh
 bb lingq --help
+bb lingq url --help
 ```
 
 ## Requirements
@@ -156,7 +157,7 @@ N1 -> 5
 Above N1 -> 6
 ```
 
-`core.clj` runs the JLPT estimate in parallel with text-to-speech generation and
+`url_cmd.clj` runs the JLPT estimate in parallel with text-to-speech generation and
 uses the returned `lingq-level` as the lesson `level` sent to LingQ.
 
 ## Tasks
@@ -170,7 +171,7 @@ bb tasks
 Run the app:
 
 ```sh
-bb lingq --url https://example.com/article
+bb lingq url https://example.com/article
 ```
 
 Run tests:
@@ -194,7 +195,8 @@ clojure -M:fmt check src test scripts
 ## Code Layout
 
 ```text
-src/lingq_lesson/core.clj    CLI entrypoint and orchestration
+src/lingq_lesson/core.clj    CLI entrypoint and command dispatch
+src/lingq_lesson/url_cmd.clj URL command options and orchestration
 src/lingq_lesson/parser.clj  Defuddle integration, text cleanup, image download
 src/lingq_lesson/openai.clj  Shared OpenAI API helpers
 src/lingq_lesson/audio.clj   OpenAI text-to-speech client
@@ -231,7 +233,7 @@ The old standalone pipeline scripts have been removed. The supported workflow is
 the app task:
 
 ```sh
-bb lingq --url <article-url>
+bb lingq url <article-url>
 ```
 
 ## License
