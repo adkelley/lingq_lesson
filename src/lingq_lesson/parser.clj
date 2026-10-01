@@ -130,11 +130,11 @@
 
 (defn- defuddle->article
   "Map parsed defuddle output into canonical article map"
-  [parsed]
+  [parsed image-url]
   (let [content-markdown (or (:contentMarkdown parsed) "")]
     {:text (markdown->text content-markdown)
      :title (or (:title parsed) "")
-     :image (download-image! (or (:image parsed) ""))
+     :image (if image-url (download-image! image-url) (download-image! (or (:image parsed) "")))
      :tags (extract-tags parsed)
      :original-url (meta-content-by-property (:metaTags parsed) "og:url")
      :description (or (:description parsed) "")}))
@@ -145,8 +145,8 @@
 (defn parse-article
   "Parses an article from the given URL using defuddle.
   The shape returned is a map with keys :text, :title, :image, and :description."
-  [url]
-  (-> url
+  [article-url image-url]
+  (-> article-url
       fetch-defuddle-json
       parse-defuddle-json
-      defuddle->article))
+      (defuddle->article image-url)))

@@ -173,7 +173,23 @@
                                          (is (= "https://example.com/media/2026/06/20260604-GYT1I00048-1.jpg?type=large"
                                                 url))
                                          (.getBytes "image-bytes"))]
-    (let [article (#'parser/defuddle->article parsed-sample-article)]
+    (let [article (#'parser/defuddle->article parsed-sample-article nil)]
+      (is (= "my title" (:title article)))
+      (is (= "my description" (:description article)))
+      (is (= ["example" "article"] (:tags article)))
+      (is (= "https://www.yomiuri.co.jp/national/20260604-GYT1T00046/"
+             (:original-url article)))
+      (is (= "これは太字と強調を含む最初の文です。"
+             (first (string/split-lines (:text article)))))
+      (is (= "image-bytes" (String. (:image article)))))))
+
+(deftest defuddle->article-and-image-maps-parser-output-to-lesson-input
+  (with-redefs [parser/download-image! (fn [url]
+                                         (is (= "https://example.com/media/2026/06/20260604-GYT1I00048-1.jpg?type=large"
+                                                url))
+                                         (.getBytes "image-bytes"))]
+    (let [image-url "https://example.com/media/2026/06/20260604-GYT1I00048-1.jpg?type=large"
+          article (#'parser/defuddle->article parsed-sample-article image-url)]
       (is (= "my title" (:title article)))
       (is (= "my description" (:description article)))
       (is (= ["example" "article"] (:tags article)))

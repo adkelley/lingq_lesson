@@ -22,7 +22,10 @@
    :silent       {:desc "Silent mode"
                   :require false
                   :default false
-                  :validate boolean?}})
+                  :validate boolean?}
+   :image        {:desc "images to use"
+                  :require false
+                  :default nil}})
 
 (def url-doc
   (str
@@ -59,16 +62,6 @@
     (println (str "Error: " msg)))
   (System/exit 1))
 
-(defn- validate-url!
-  [url]
-  (try
-    (let [uri (java.net.URI. url)]
-      (when-not (and (#{"http" "https"} (.getScheme uri))
-                     (some? (.getHost uri)))
-        (throw (ex-info "Invalid URL" {:url url})))
-      url)
-    (catch IllegalArgumentException cause
-      (throw (ex-info "Invalid URL" {:url url} cause)))))
 
 (defn- resolve-voice
   [vibe]
@@ -113,10 +106,22 @@
   (println "Creating lesson:")
   (println (format "  title: %s\n  url:   %s\n" title original-url)))
 
+(defn- validate-url!
+  [url]
+  (try
+    (let [uri (java.net.URI. url)]
+      (when-not (and (#{"http" "https"} (.getScheme uri))
+                     (some? (.getHost uri)))
+        (throw (ex-info "Invalid URL" {:url url})))
+      url)
+    (catch IllegalArgumentException cause
+      (throw (ex-info "Invalid URL" {:url url} cause)))))
+
 (defn- create-lesson!
   [opts]
   (let [source-url (validate-url! (:url opts))
-        article (parser/parse-article source-url)
+        image-url (if (:image opts) (validate-url! (:image opts)) nil)
+        article (parser/parse-article source-url image-url)
         verbose (not (:silent opts))
         audio-future (future (create-audio! article opts verbose))
         difficulty-future (future (assess-difficulty! article verbose))

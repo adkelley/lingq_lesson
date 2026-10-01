@@ -62,6 +62,13 @@
 (def ^:private max-retries 3)
 (def ^:private default-retry-after-seconds 30)
 
+;; LingQ tokenizes imported lessons asynchronously.  Fifteen seconds was too
+;; short for larger lessons (and left an otherwise successfully-created lesson
+;; stranded without its audio).  Keep polling for a bounded amount of time so
+;; a genuinely stuck lesson still fails instead of hanging forever.
+(def ^:private tokenization-poll-interval-seconds 3)
+(def ^:private tokenization-max-wait-seconds 180)
+
 (defn- retry-after-seconds
   "Reads the Retry-After response header (seconds form), falling back to a
   default when it is absent or not an integer."
@@ -165,7 +172,7 @@
   (400 {:errorType \"locked\" :isLocked \"TOKENIZE_TEXT\"}); we poll past that."
   [lesson-id]
   (let [url (format "https://www.lingq.com/api/v3/ja/lessons/%s/" lesson-id)]
-    (loop [attempt 1]
+    (loop [elapsed 0]
       (let [response (hc/get url {:headers (request-headers) :throw-exceptions false})
             {:keys [body status]} response
             response-body (body->str body)
@@ -174,11 +181,15 @@
           (<= 200 status 299)
           parsed-body
 
-          (and (= 400 status) (= "locked" (:errorType parsed-body)) (< attempt 6))
-          (do (println (format "  lesson locked (%s); retrying in 3s (%d/6)"
-                               (:isLocked parsed-body) attempt))
-              (Thread/sleep 3000)
-              (recur (inc attempt)))
+          (and (= 400 status) (= "locked" (:errorType parsed-body))
+               (< elapsed tokenization-max-wait-seconds))
+          (let [wait-seconds (min tokenization-poll-interval-seconds
+                                  (- tokenization-max-wait-seconds elapsed))]
+            (println (format "  lesson locked (%s); retrying in %ds (%ds/%ds elapsed)"
+                             (:isLocked parsed-body) wait-seconds elapsed
+                             tokenization-max-wait-seconds))
+            (Thread/sleep (* wait-seconds 1000))
+            (recur (+ elapsed wait-seconds)))
 
           :else
           (throw-response-error (assoc response :body response-body) (request-headers)))))))
