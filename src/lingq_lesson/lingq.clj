@@ -98,7 +98,7 @@
   "Builds the import POST body. `tags` and `description` are sent here (verified
   to persist on import — re-GET to see them, the 201 echo omits tags), so the
   only field left for the follow-up PATCH is `audio`."
-  [{:keys [title text status image level tags description original-url]}]
+  [{:keys [title text status image level tags description original-url course-id]}]
   (cond-> [{:name "title" :content title}
            {:name "file"
             :content (.getBytes text StandardCharsets/UTF_8)
@@ -114,7 +114,10 @@
            {:name "tags" :content (str/join "," tags)}
            {:name "description" :content description}
            {:name "originalUrl" :content original-url}
-           {:name "save" :content "true"}]))
+           {:name "save" :content "true"}]
+    course-id
+    (conj {:name "collection"
+           :content (str course-id)})))
 
 (defn- post-import-request [multipart]
   (when-not (seq lingq-api-key)
@@ -196,7 +199,7 @@
 
 (defn create-lesson
   [lesson]
-  (let [{:keys [audio title text status level image tags description original-url]} lesson
+  (let [{:keys [audio title text status level image tags description original-url course-id]} lesson
         _ (when (and (= "shared" status) (not image))
             (println "A cover image is required to share a lesson")
             (System/exit 1))
@@ -207,7 +210,8 @@
                                     :level level
                                     :tags tags
                                     :original-url original-url
-                                    :description description})
+                                    :description description
+                                    :course-id course-id})
         lesson (post-import-request multipart)
         id (:id lesson)]
     (if id
@@ -231,8 +235,25 @@
             (println "  tags:        " (:tags saved))
             (println "  level:       " (:level saved))
             (println "  title:       " (:title saved))
+            (println "  course id:   " (:collectionId saved))
+            (println "  course title:" (:collectionTitle saved))
             (println "  description: " (:description saved)))
           (catch Exception e
             (println "  (verify skipped:" (ex-message e) "— open the URL above)"))))
       (println "No lesson id in import response; skipping audio/tags attach.")))
   (System/exit 0))
+
+(defn get-my-collections
+  [language]
+  (let [url (format "https://www.lingq.com/api/v3/%s/collections/my/" language)
+        response (hc/get url
+                         {:headers (request-headers)
+                          :throw-exceptions false})
+        {:keys [body status]} response
+        response-body (body->str body)
+        parsed-body (parse-json-body response-body)]
+    (when-not (<= 200 status 299)
+      (throw-response-error
+       (assoc response :body response-body)
+       (request-headers)))
+    parsed-body))

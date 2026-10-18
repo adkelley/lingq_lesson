@@ -3,6 +3,7 @@
    [clojure.test :as test]
    [lingq-lesson.audio-instructions-test]
    [lingq-lesson.audio-test]
+   [lingq-lesson.courses-cmd-test]
    [lingq-lesson.core-test]
    [lingq-lesson.jlpt-level-test]
    [lingq-lesson.lingq-test]
@@ -13,6 +14,7 @@
 (defn run []
   (let [{:keys [fail error]} (test/run-tests 'lingq-lesson.audio-instructions-test
                                              'lingq-lesson.audio-test
+                                             'lingq-lesson.courses-cmd-test
                                              'lingq-lesson.core-test
                                              'lingq-lesson.jlpt-level-test
                                              'lingq-lesson.lingq-test

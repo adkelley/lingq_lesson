@@ -8,6 +8,13 @@
    [lingq-lesson.parser :as parser]
    [lingq-lesson.style-classifier :as style-classifier]))
 
+(defn- positive-course-id?
+  [value]
+  (try
+    (pos? (Long/parseLong (str value)))
+    (catch NumberFormatException _
+      false)))
+
 (defn- supported-values-desc
   [values]
   (str "(" (str/join ", " (sort values)) ")"))
@@ -25,7 +32,11 @@
                   :validate boolean?}
    :image        {:desc "images to use"
                   :require false
-                  :default nil}})
+                  :default nil}
+   :course-id    {:desc "LingQ course ID to assign the lesson to"
+                  :require false
+                  :default nil
+                  :validate positive-course-id?}})
 
 (def url-doc
   (str
@@ -64,7 +75,6 @@
     (println (str "Error: " msg)))
   (System/exit 1))
 
-
 (defn- resolve-voice
   [vibe]
   (get vibe->voice vibe "alloy"))
@@ -96,12 +106,13 @@
   (jlpt-level/article-text->jlpt-level! text verbose))
 
 (defn- build-lesson
-  [article source-url audio-result difficulty]
+  [article source-url audio-result difficulty course-id]
   (merge article
          {:status "private"
           :level (:lingq-level difficulty)
           :audio audio-result
-          :original-url (or (:original-url article) source-url)}))
+          :original-url (or (:original-url article) source-url)
+          :course-id course-id}))
 
 (defn- print-lesson-summary!
   [{:keys [title original-url]}]
@@ -123,6 +134,7 @@
   [opts]
   (let [source-url (validate-url! (:url opts))
         image-url (if (:image opts) (validate-url! (:image opts)) nil)
+        course-id (:course-id opts)
         article (parser/parse-article source-url image-url)
         verbose (not (:silent opts))
         audio-future (future (create-audio! article opts verbose))
@@ -130,7 +142,8 @@
         lesson (build-lesson article
                              source-url
                              @audio-future
-                             @difficulty-future)]
+                             @difficulty-future
+                             course-id)]
     (print-lesson-summary! lesson)
     (lingq/create-lesson lesson)))
 

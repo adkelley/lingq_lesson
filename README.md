@@ -9,6 +9,32 @@ text-to-speech audio, and posts a private Japanese lesson to LingQ.
 
 ## Usage
 
+List the courses available in a LingQ language:
+
+```sh
+bb lingq courses ja
+```
+
+The command prints each course's ID and title. Use the ID when selecting a
+course for a lesson upload.
+
+The optional `--course-id` flag assigns a lesson to a selected course:
+
+```sh
+bb lingq url https://example.com/article --course-id 123456
+```
+
+Example output:
+
+```text
+ID           Title
+------------------------------------------------------------
+123456       Japanese Politics
+234567       Japanese News
+```
+
+Create a lesson from an article URL:
+
 ```sh
 bb lingq url https://example.com/article
 ```
@@ -20,7 +46,16 @@ Optional flags may follow it:
 bb lingq url https://example.com/article \
   --voice alloy \
   --vibe news \
+  --course-id 123456 \
   --silent
+```
+
+On macOS, you can read the article URL from the clipboard and select the first
+course whose title contains `Politics`:
+
+```sh
+bb lingq url "$(pbpaste)" \
+  --course-id "$(bb lingq courses ja | awk '/Politics/ {print $1; exit}')"
 ```
 
 Use `--silent` to suppress the detailed style-classification and JLPT analysis
