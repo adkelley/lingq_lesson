@@ -1,7 +1,8 @@
 (ns lingq-lesson.core
   (:require
    [babashka.deps :as deps]
-   [lingq-lesson.url-cmd :as url-cmd]))
+   [lingq-lesson.url-cmd :as url-cmd]
+   [lingq-lesson.courses-cmd :as courses-cmd]))
 
 ;; bb currently bundles an older babashka.cli; add and reload the newer
 ;; version so automatic help/completions are available before dispatch.
@@ -14,7 +15,13 @@
     :fn url-cmd/url
     :doc url-cmd/url-doc
     :args->opts [:url]
-    :spec url-cmd/url-spec}])
+    :spec url-cmd/url-spec}
+
+   {:cmds ["courses"]
+    :fn courses-cmd/courses
+    :doc courses-cmd/courses-doc
+    :args->opts [:language]
+    :spec courses-cmd/courses-spec}])
 
 (defn- print-error!
   [{:keys [msg]}]

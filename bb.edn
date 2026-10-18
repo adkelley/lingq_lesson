@@ -11,4 +11,4 @@
             :task (test-runner/run)
             :depends []}
   fmt      {:doc "Format Clojure files with cljfmt"
-            :task (shell "clojure -M:fmt fix src test script")}}}
+            :task (shell "clojure -M:fmt fix src test scripts")}}}

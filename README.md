@@ -9,6 +9,26 @@ text-to-speech audio, and posts a private Japanese lesson to LingQ.
 
 ## Usage
 
+List the courses available in a LingQ language:
+
+```sh
+bb lingq courses ja
+```
+
+The command prints each course's ID and title. Use the ID when selecting a
+course for a lesson upload.
+
+Example output:
+
+```text
+ID           Title
+------------------------------------------------------------
+123456       Japanese Politics
+234567       Japanese News
+```
+
+Create a lesson from an article URL:
+
 ```sh
 bb lingq url https://example.com/article
 ```

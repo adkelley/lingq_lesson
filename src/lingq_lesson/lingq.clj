@@ -236,3 +236,18 @@
             (println "  (verify skipped:" (ex-message e) "— open the URL above)"))))
       (println "No lesson id in import response; skipping audio/tags attach.")))
   (System/exit 0))
+
+(defn get-my-collections
+  [language]
+  (let [url (format "https://www.lingq.com/api/v3/%s/collections/my/" language)
+        response (hc/get url
+                         {:headers (request-headers)
+                          :throw-exceptions false})
+        {:keys [body status]} response
+        response-body (body->str body)
+        parsed-body (parse-json-body response-body)]
+    (when-not (<= 200 status 299)
+      (throw-response-error
+       (assoc response :body response-body)
+       (request-headers)))
+    parsed-body))
