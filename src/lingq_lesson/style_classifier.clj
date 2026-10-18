@@ -47,6 +47,7 @@
    "  * sports\n"
    "  * technology\n"
    "  * lifestyle\n"
+   "  * politics\n"
    "  * news\n\n"
 
    "If the article is not clear or does not fit into any of the above categories, then classify it as \"other\"."

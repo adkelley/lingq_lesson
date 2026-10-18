@@ -35,6 +35,7 @@
    "- crime      -> onyx\n"
    "- entertainment -> nova\n"
    "- news       -> alloy\n"
+   "- politics   -> onyx\n"
    "- sports     -> echo\n"
    "- lifestyle  -> nova\n"
    "- technology -> alloy\n"))
@@ -45,6 +46,7 @@
    "entertainment" "nova"
    "lifestyle" "nova"
    "news" "alloy"
+   "politics" "onyx"
    "sports" "echo"
    "technology" "alloy"})
 

@@ -124,13 +124,30 @@
    "in film, television, music, celebrities, awards, and popular culture without sounding promotional, "
    "overly excited, or theatrically gossipy."))
 
-(def  supported-vibes #{"business" "crime" "entertainment" "news" "sports" "lifestyle" "technology"})
+(def politics
+  (str
+   "Voice: Calm, authoritative, and measured, with a clear, deliberate cadence. The delivery should "
+   "sound like an experienced political correspondent explaining consequential developments to an informed audience."
+   "\n"
+   "Phrasing: Emphasize names, offices, institutions, policies, legislation, dates, and key claims. "
+   "Distinguish clearly between verified facts, statements by participants, analysis, allegations, and projections."
+   "\n"
+   "Punctuation: Use natural pauses at commas and sentence boundaries, with slightly longer pauses around "
+   "major policy changes, quotations, election results, and shifts in political context. Pauses should support clarity, "
+   "not create suspense."
+   "\n"
+   "Tone: Objective, respectful, and analytical. Explain disagreement and competing viewpoints fairly without "
+   "sounding partisan, sensational, cynical, or emotionally reactive. Maintain appropriate gravity while keeping "
+   "complex political subjects accessible."))
+
+(def  supported-vibes #{"business" "crime" "entertainment" "news" "politics" "sports" "lifestyle" "technology"})
 
 (def instructions
   {:business    business
    :crime       crime
    :entertainment entertainment
    :news        newscaster
+   :politics    politics
    :sports      sportscaster
    :lifestyle   lifestyle
    :technology technology})

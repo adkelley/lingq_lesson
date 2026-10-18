@@ -29,7 +29,7 @@ lesson creation process.
 
 Supported voices: `alloy` (male), `echo` (male), `onyx` (male), `nova` (female), `shimmer` (female).
 
-Supported vibes: `business`, `news`, `sports`, `lifestyle`, `technology`.
+Supported vibes: `business`, `crime`, `entertainment`, `news`, `politics`, `sports`, `lifestyle`, `technology`.
 
 OpenAI intentionally describes the TTS voices in terms of their character and sound, 
 not as explicitly male or female. That said, most listeners perceive them roughly as follows:
@@ -48,6 +48,7 @@ Vibe | Voice
 --- | ---
 `business` | `onyx`
 `news` | `alloy`
+`politics` | `onyx`
 `sports` | `echo`
 `lifestyle` | `nova`
 `technology` | `alloy`

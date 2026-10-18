@@ -9,6 +9,7 @@
   (is (audio-instructions/supported-vibe? "entertainment"))
   (is (audio-instructions/supported-vibe? "sports"))
   (is (audio-instructions/supported-vibe? "lifestyle"))
+  (is (audio-instructions/supported-vibe? "politics"))
   (is (not (audio-instructions/supported-vibe? "default")))
   (is (not (audio-instructions/supported-vibe? "unknown"))))
 
@@ -22,7 +23,9 @@
   (is (= audio-instructions/crime
          (audio-instructions/for-vibe "crime")))
   (is (= audio-instructions/entertainment
-         (audio-instructions/for-vibe "entertainment"))))
+         (audio-instructions/for-vibe "entertainment")))
+  (is (= audio-instructions/politics
+         (audio-instructions/for-vibe "politics"))))
 
 (deftest for-vibe-falls-back-to-newscaster
   (is (= audio-instructions/newscaster
