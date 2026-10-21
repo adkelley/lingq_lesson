@@ -12,15 +12,6 @@
 (def ^:private sentence-punctuation #"[.。!?！？]")
 
 ;; ---------------------------------------------------------------------------
-;; Utilities
-;; ---------------------------------------------------------------------------
-(defn- fail!
-  [msg]
-  (binding [*out* *err*]
-    (println (str "Error: " msg)))
-  (System/exit 1))
-
-;; ---------------------------------------------------------------------------
 ;; Defuddle / fetch helpers
 ;; ---------------------------------------------------------------------------
 (defn- defuddle-exists? []
@@ -46,7 +37,9 @@
   (try
     (json/parse-string out true)
     (catch Exception e
-      (fail! (format "Failed to decode article to JSON: %s" (.getMessage e))))))
+      (throw (ex-info "Failed to parse article to JSON"
+                      {}
+                      e)))))
 
 ;; ---------------------------------------------------------------------------
 ;; Image helper (returns byte-array body)
@@ -130,11 +123,10 @@
 
 (defn- defuddle->article
   "Map parsed defuddle output into canonical article map"
-  [parsed image-url]
+  [parsed]
   (let [content-markdown (or (:contentMarkdown parsed) "")]
     {:text (markdown->text content-markdown)
      :title (or (:title parsed) "")
-     :image (if image-url (download-image! image-url) (download-image! (or (:image parsed) "")))
      :tags (extract-tags parsed)
      :original-url (meta-content-by-property (:metaTags parsed) "og:url")
      :description (or (:description parsed) "")}))
@@ -144,9 +136,18 @@
 ;; ---------------------------------------------------------------------------
 (defn parse-article
   "Parses an article from the given URL using defuddle.
-  The shape returned is a map with keys :text, :title, :image, and :description."
-  [article-url image-url]
-  (-> article-url
-      fetch-defuddle-json
-      parse-defuddle-json
-      (defuddle->article image-url)))
+  Returns article text and metadata, with downloaded image bytes in :image.
+  Set :download-image? to false in the options map to skip downloading and
+  return nil for :image. Image downloading defaults to true."
+  ([article-url image-url]
+   (parse-article article-url image-url {}))
+  ([article-url image-url {:keys [download-image?]
+                           :or {download-image? true}}]
+   (let [parsed
+         (-> article-url
+             fetch-defuddle-json
+             parse-defuddle-json)
+         article (defuddle->article parsed)]
+     (assoc article :image
+            (when download-image?
+              (download-image! (or image-url (:image parsed) "")))))))

@@ -18,6 +18,12 @@ bb lingq courses ja
 The command prints each course's ID and title. Use the ID when selecting a
 course for a lesson upload.
 
+The optional `--course-id` flag assigns a lesson to a selected course:
+
+```sh
+bb lingq url https://example.com/article --course-id 123456
+```
+
 Example output:
 
 ```text
@@ -40,8 +46,37 @@ Optional flags may follow it:
 bb lingq url https://example.com/article \
   --voice alloy \
   --vibe news \
+  --course-id 123456 \
+  --lingq-level 4 \
   --silent
 ```
+
+On macOS, you can read the article URL from the clipboard and select the first
+course whose title contains `Politics`:
+
+```sh
+bb lingq url "$(pbpaste)" \
+  --course-id "$(bb lingq courses ja | awk '/Politics/ {print $1; exit}')"
+```
+
+Use `--lingq-level` with an integer from 1 through 6 to set the lesson difficulty
+directly and skip automatic JLPT difficulty assessment. For example,
+`--lingq-level 4` selects the level mapped to JLPT N2. Audio generation and
+upload still run normally. Omit the option to estimate difficulty automatically.
+
+Use `--dry-run` to fetch an article and print its title, style, and LingQ level
+without creating a lesson:
+
+```sh
+bb lingq url https://example.com/article --dry-run
+```
+
+Dry runs skip cover-image downloads, audio generation, and all LingQ calls.
+OpenAI still assesses style and difficulty unless their respective overrides
+are supplied: `--vibe` skips style classification, and `--lingq-level` skips
+difficulty assessment. The summary displays the effective values, including
+any overrides. Use `--silent` to hide detailed assessments while keeping the
+summary visible.
 
 Use `--silent` to suppress the detailed style-classification and JLPT analysis
 output. Pipeline progress messages remain visible so you can still follow the
@@ -97,6 +132,15 @@ bb lingq url https://example.com/article --vibe lifestyle --voice nova
 
 # Hide detailed analysis while retaining pipeline progress messages.
 bb lingq url https://example.com/article --silent
+
+# Override difficulty and skip the JLPT predictor.
+bb lingq url https://example.com/article --lingq-level 4
+
+# Assess style and difficulty without generating audio or uploading.
+bb lingq url https://example.com/article --dry-run --silent
+
+# Preview supplied values without either OpenAI assessment.
+bb lingq url https://example.com/article --dry-run --vibe news --lingq-level 4
 ```
 
 Print general or command-specific help:
@@ -123,6 +167,10 @@ Set API keys in the environment:
 export OPENAI_API_KEY=...
 export LINGQ_API_KEY=...
 ```
+
+Dry runs do not require `LINGQ_API_KEY`. They require `OPENAI_API_KEY` only
+when style or difficulty needs automatic assessment; supplying both `--vibe`
+and `--lingq-level` skips those OpenAI calls.
 
 ## What It Does
 
@@ -154,7 +202,7 @@ The created lesson includes:
 - description
 - source-derived tags
 - original URL
-- estimated LingQ level
+- estimated or explicitly selected LingQ level
 
 LingQ tokenizes imported lessons asynchronously, so the app waits for the lesson
 lock to clear before attaching audio.
@@ -178,8 +226,11 @@ N1 -> 5
 Above N1 -> 6
 ```
 
-`url_cmd.clj` runs the JLPT estimate in parallel with text-to-speech generation and
-uses the returned `lingq-level` as the lesson `level` sent to LingQ.
+When `--lingq-level` is omitted, `url_cmd.clj` runs the JLPT estimate in parallel
+with text-to-speech generation and uses the returned `lingq-level` as the lesson
+`level` sent to LingQ. With `--lingq-level`, the supplied integer is used instead
+and the difficulty predictor is skipped. The manual override accepts 1–6;
+automatic estimation can also return 6 for material above typical N1 difficulty.
 
 ## Tasks
 
@@ -232,7 +283,7 @@ test/                        Regression tests
 
 - language: Japanese (`ja`) for LingQ API calls
 - status: `private`
-- level: estimated from article text
+- level: estimated from article text unless `--lingq-level` (1–6) is supplied
 - tags: extracted from article metadata
 - voice: auto-classified unless `--voice` or `--vibe` is provided; fallback `alloy`
 - vibe: auto-classified unless `--voice` or `--vibe` is provided; fallback `news`

@@ -51,3 +51,30 @@
           (is (= 401 (get-in (ex-data e) [:status])))
           (is (= {:detail "Invalid token."}
                  (get-in (ex-data e) [:body]))))))))
+
+(deftest multipart-parts-includes-course-id
+  (let [multipart (#'lingq/multipart-parts
+                   {:title "Title"
+                    :text "Text"
+                    :status "private"
+                    :image "image-bytes"
+                    :level 3
+                    :tags ["news"]
+                    :description "Description"
+                    :original-url "https://example.com/article"
+                    :course-id 123456})]
+    (is (= "123456"
+           (part-content multipart "collection")))))
+
+(deftest multipart-parts-omits-course-id-when-nil
+  (let [multipart (#'lingq/multipart-parts
+                   {:title "Title"
+                    :text "Text"
+                    :status "private"
+                    :image "image-bytes"
+                    :level 3
+                    :tags ["news"]
+                    :description "Description"
+                    :original-url "https://example.com/article"
+                    :course-id nil})]
+    (is (nil? (part-content multipart "collection")))))

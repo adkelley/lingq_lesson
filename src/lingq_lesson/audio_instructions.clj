@@ -153,7 +153,7 @@
    :technology technology})
 
 (defn for-vibe [vibe]
-  (get instructions (keyword vibe) newscaster))
+  (get instructions (some-> vibe keyword) newscaster))
 
 (defn supported-vibe? [vibe]
   (contains? supported-vibes vibe))
