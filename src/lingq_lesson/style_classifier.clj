@@ -1,18 +1,19 @@
 (ns lingq-lesson.style-classifier
   (:require
    [hato.client :as hc]
+   [lingq-lesson.api :as api]
    [lingq-lesson.openai :as openai]))
 
 (def model "gpt-5-mini")
 
 (defn- post-responses-request [payload]
   (openai/require-api-key)
-  (let [headers (openai/request-headers "application/json")
+  (let [headers (api/request-headers (openai/api-key) "application/json")
         response
         (try
           (hc/post openai/responses-url
                    {:headers headers
-                    :body (openai/encode payload)
+                    :body (api/encode payload)
                     :throw-exceptions false})
           (catch Exception e
             (throw (ex-info "OpenAI request failed."
@@ -21,16 +22,17 @@
         {:keys [body status]}
         response
         parsed-body
-        (openai/parse-json-body body)]
+        (api/parse-json-body body)]
     (when-not (<= 200 status 299)
-      (openai/throw-response-error response headers))
+      (api/throw-response-error (assoc response :body (api/body->string body))
+                                headers openai/status-message))
     (when-not parsed-body
       (throw (ex-info "OpenAI response body was empty or could not be decoded."
                       {:status status
                        :body body
                        :response {:status status
                                   :body body
-                                  :opts {:headers (openai/redact-headers headers)}}})))
+                                  :opts {:headers (api/redact-headers headers)}}})))
     parsed-body))
 
 (defn prompt [article-text]
@@ -93,4 +95,4 @@
                        {:response response})))
      (when verbose
        (println "Style classifier response:" output-text))
-     (openai/decode output-text))))
+     (api/decode output-text))))

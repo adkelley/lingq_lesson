@@ -2,21 +2,23 @@
   (:require
    [clojure.string :as string]
    [clojure.test :refer [deftest is]]
+   [lingq-lesson.api :as api]
    [lingq-lesson.openai :as openai]))
 
 (deftest redact-headers-normalizes-and-redacts-authorization
   (is (= {"authorization" "[REDACTED]"
           "content-type" "application/json"}
-         (openai/redact-headers {"Authorization" "Bearer secret"
-                                 :content-type "application/json"}))))
+         (api/redact-headers {"Authorization" "Bearer secret"
+                              :content-type "application/json"}))))
 
 (deftest throw-response-error-includes-openai-error-message
   (try
-    (openai/throw-response-error
+    (api/throw-response-error
      {:status 400
       :headers {}
       :body "{\"error\":{\"message\":\"Invalid request\"}}"}
-     {"authorization" "Bearer secret"})
+     {"authorization" "Bearer secret"}
+     openai/status-message)
     (is false "Expected OpenAI response error")
     (catch clojure.lang.ExceptionInfo e
       (is (string/includes? (.getMessage e)
@@ -24,11 +26,11 @@
 
 (deftest throw-response-error-redacts-request-authorization
   (try
-    (openai/throw-response-error
+    (api/throw-response-error
      {:status 401
       :headers {}
       :body "{\"error\":{\"message\":\"Bad key\"}}"}
-     {"authorization" "Bearer secret"})
+     {"authorization" "Bearer secret"} openai/status-message)
     (is false "Expected OpenAI response error")
     (catch clojure.lang.ExceptionInfo e
       (is (= "[REDACTED]"
@@ -38,5 +40,5 @@
 
 (deftest body->string-decodes-byte-arrays
   (is (= "{\"error\":{\"message\":\"Invalid request\"}}"
-         (openai/body->string
+         (api/body->string
           (.getBytes "{\"error\":{\"message\":\"Invalid request\"}}" "UTF-8")))))

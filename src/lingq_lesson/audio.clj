@@ -2,6 +2,7 @@
   (:require
    [lingq-lesson.openai :as openai]
    [hato.client :as hc]
+   [lingq-lesson.api :as api]
    [lingq-lesson.audio-instructions :as audio-instructions]))
 
 (def voices #{"alloy" "echo" "nova" "onyx" "shimmer"})
@@ -29,12 +30,12 @@
                          :response_format (:format request-opts)}
                   (seq instructions)
                   (assoc :instructions instructions))
-        headers (openai/request-headers "application/json")
+        headers (api/request-headers (openai/api-key) "application/json")
         response
         (try
           (hc/post openai/speech-url
                    {:headers headers
-                    :body (openai/encode payload)
+                    :body (api/encode payload)
                     :as :byte-array
                     :throw-exceptions false})
           (catch Exception e
@@ -43,6 +44,6 @@
                             e))))
         {:keys [body status]} response]
     (when-not (<= 200 status 299)
-      (openai/throw-response-error (assoc response :body (openai/body->string body))
-                                   headers))
+      (api/throw-response-error (assoc response :body (api/body->string body))
+                                   headers openai/status-message))
     body))
