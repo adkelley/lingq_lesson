@@ -3,7 +3,7 @@
    [cheshire.core :as json]
    [clojure.test :refer [deftest is]]
    [hato.client :as hc]
-   [lingq-lesson.audio :as audio]
+   [lingq-lesson.openai.audio :as audio]
    [lingq-lesson.audio-instructions :as audio-instructions]
    [lingq-lesson.openai :as openai]))
 

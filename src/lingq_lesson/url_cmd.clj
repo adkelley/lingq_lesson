@@ -1,12 +1,12 @@
 (ns lingq-lesson.url-cmd
   (:require
    [clojure.string :as str]
-   [lingq-lesson.audio :as audio]
+   [lingq-lesson.openai.audio :as audio]
    [lingq-lesson.audio-instructions :as audio-instructions]
-   [lingq-lesson.jlpt-level :as jlpt-level]
+   [lingq-lesson.openai.difficulty-classifier :as difficulty-classifier]
    [lingq-lesson.lingq :as lingq]
    [lingq-lesson.parser :as parser]
-   [lingq-lesson.style-classifier :as style-classifier]))
+   [lingq-lesson.openai.style-classifier :as style-classifier]))
 
 (defn- positive-course-id?
   [value]
@@ -111,7 +111,7 @@
 (defn- assess-difficulty!
   [{:keys [text title]} verbose]
   (println-status (str "Assessing difficulty for " title))
-  (jlpt-level/article-text->jlpt-level! text verbose))
+  (difficulty-classifier/article-text->difficulty! text verbose))
 
 (defn- build-lesson
   [article source-url audio-result difficulty course-id]

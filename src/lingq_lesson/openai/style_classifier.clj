@@ -1,4 +1,4 @@
-(ns lingq-lesson.style-classifier
+(ns lingq-lesson.openai.style-classifier
   (:require
    [hato.client :as hc]
    [lingq-lesson.api :as api]

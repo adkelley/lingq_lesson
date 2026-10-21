@@ -2,7 +2,7 @@
   (:require
    [clojure.string :as str]
    [clojure.test :refer [deftest is]]
-   [lingq-lesson.style-classifier :as style-classifier]))
+   [lingq-lesson.openai.style-classifier :as style-classifier]))
 
 (deftest prompt-lists-public-categories
   (let [prompt (style-classifier/prompt "article text")]

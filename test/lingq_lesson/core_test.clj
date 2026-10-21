@@ -2,11 +2,11 @@
   (:require
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
-   [lingq-lesson.audio :as audio]
-   [lingq-lesson.jlpt-level :as jlpt-level]
+   [lingq-lesson.openai.audio :as audio]
+   [lingq-lesson.openai.difficulty-classifier :as difficulty-classifier]
    [lingq-lesson.lingq :as lingq]
    [lingq-lesson.parser :as parser]
-   [lingq-lesson.style-classifier :as style-classifier]
+   [lingq-lesson.openai.style-classifier :as style-classifier]
    [lingq-lesson.url-cmd :as url-cmd]))
 
 (deftest crime-and-entertainment-use-recommended-voices
@@ -41,7 +41,7 @@
                         (swap! calls conj [:style text verbose])
                         (when verbose (println "Detailed style assessment"))
                         {:vibe "news"})
-                      jlpt-level/article-text->jlpt-level!
+                      difficulty-classifier/article-text->difficulty!
                       (fn [text verbose]
                         (swap! calls conj [:difficulty text verbose])
                         (when verbose (println "Detailed difficulty assessment"))
@@ -77,7 +77,7 @@
                   (fn [text verbose]
                     (swap! calls conj [:style text verbose])
                     {:vibe "news"})
-                  jlpt-level/article-text->jlpt-level!
+                  difficulty-classifier/article-text->difficulty!
                   (fn [text verbose]
                     (swap! calls conj [:difficulty text verbose])
                     {:lingq-level 3})

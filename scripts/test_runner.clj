@@ -5,7 +5,7 @@
    [lingq-lesson.audio-test]
    [lingq-lesson.courses-cmd-test]
    [lingq-lesson.core-test]
-   [lingq-lesson.jlpt-level-test]
+   [lingq-lesson.difficulty-classifier-test]
    [lingq-lesson.lingq-test]
    [lingq-lesson.openai-test]
    [lingq-lesson.parser-test]
@@ -16,7 +16,7 @@
                                              'lingq-lesson.audio-test
                                              'lingq-lesson.courses-cmd-test
                                              'lingq-lesson.core-test
-                                             'lingq-lesson.jlpt-level-test
+                                             'lingq-lesson.difficulty-classifier-test
                                              'lingq-lesson.lingq-test
                                              'lingq-lesson.openai-test
                                              'lingq-lesson.parser-test

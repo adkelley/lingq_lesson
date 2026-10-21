@@ -1,4 +1,4 @@
-(ns lingq-lesson.jlpt-level
+(ns lingq-lesson.openai.difficulty-classifier
   (:require
    [hato.client :as hc]
    [lingq-lesson.api :as api]
@@ -110,8 +110,8 @@
               (content-text content))
             (:output response))))
 
-(defn article-text->jlpt-level!
-  ([article-text] (article-text->jlpt-level! article-text false))
+(defn article-text->difficulty!
+  ([article-text] (article-text->difficulty! article-text false))
   ([article-text verbose]
    (let [response (post-responses-request (responses-payload article-text))
          output-text (response->output-text response)]
