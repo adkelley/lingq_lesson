@@ -136,6 +136,16 @@
     (is (= "NewsArticle"
            (get-in parsed [:schemaOrgData 0 0 (keyword "@type")])))))
 
+(deftest parse-defuddle-json-wraps-malformed-json-error
+  (let [error (try
+                (#'parser/parse-defuddle-json "{invalid-json}")
+                nil
+                (catch clojure.lang.ExceptionInfo e
+                  e))]
+    (is (instance? clojure.lang.ExceptionInfo error))
+    (is (= "Failed to parse article to JSON" (ex-message error)))
+    (is (some? (ex-cause error)))))
+
 (deftest markdown->text-strips-markdown-and-keeps-readable-sentences
   (let [text (#'parser/markdown->text (:contentMarkdown parsed-sample-article))
         lines (clojure.string/split-lines text)]
@@ -169,32 +179,44 @@
          (#'parser/extract-tags parsed-sample-article))))
 
 (deftest defuddle->article-maps-parser-output-to-lesson-input
-  (with-redefs [parser/download-image! (fn [url]
-                                         (is (= "https://example.com/media/2026/06/20260604-GYT1I00048-1.jpg?type=large"
-                                                url))
-                                         (.getBytes "image-bytes"))]
-    (let [article (#'parser/defuddle->article parsed-sample-article nil)]
-      (is (= "my title" (:title article)))
-      (is (= "my description" (:description article)))
-      (is (= ["example" "article"] (:tags article)))
-      (is (= "https://www.yomiuri.co.jp/national/20260604-GYT1T00046/"
-             (:original-url article)))
-      (is (= "これは太字と強調を含む最初の文です。"
-             (first (string/split-lines (:text article)))))
-      (is (= "image-bytes" (String. (:image article)))))))
+  (let [article (#'parser/defuddle->article parsed-sample-article)]
+    (is (= "my title" (:title article)))
+    (is (= "my description" (:description article)))
+    (is (= ["example" "article"] (:tags article)))
+    (is (= "https://www.yomiuri.co.jp/national/20260604-GYT1T00046/"
+           (:original-url article)))
+    (is (= "これは太字と強調を含む最初の文です。"
+           (first (string/split-lines (:text article)))))))
 
-(deftest defuddle->article-and-image-maps-parser-output-to-lesson-input
-  (with-redefs [parser/download-image! (fn [url]
-                                         (is (= "https://example.com/media/2026/06/20260604-GYT1I00048-1.jpg?type=large"
-                                                url))
-                                         (.getBytes "image-bytes"))]
-    (let [image-url "https://example.com/media/2026/06/20260604-GYT1I00048-1.jpg?type=large"
-          article (#'parser/defuddle->article parsed-sample-article image-url)]
-      (is (= "my title" (:title article)))
-      (is (= "my description" (:description article)))
-      (is (= ["example" "article"] (:tags article)))
-      (is (= "https://www.yomiuri.co.jp/national/20260604-GYT1T00046/"
-             (:original-url article)))
-      (is (= "これは太字と強調を含む最初の文です。"
-             (first (string/split-lines (:text article)))))
-      (is (= "image-bytes" (String. (:image article)))))))
+(deftest parse-article-downloads-extracted-or-overridden-image
+  (doseq [image-url [nil "https://example.com/override.jpg"]]
+    (let [downloads (atom [])]
+      (with-redefs-fn {#'parser/fetch-defuddle-json
+                       (fn [url]
+                         (is (= "https://example.com/article" url))
+                         (json/generate-string parsed-sample-article))
+                       #'parser/download-image!
+                       (fn [url]
+                         (swap! downloads conj url)
+                         (.getBytes "image-bytes"))}
+        (fn []
+          (let [article (parser/parse-article "https://example.com/article" image-url)]
+            (is (= [(or image-url (:image parsed-sample-article))] @downloads))
+            (is (= "image-bytes" (String. (:image article))))
+            (is (= "my title" (:title article)))))))))
+
+(deftest parse-article-skips-image-download
+  (doseq [image-url [nil "https://example.com/override.jpg"]]
+    (with-redefs-fn {#'parser/fetch-defuddle-json
+                     (fn [_] (json/generate-string parsed-sample-article))
+                     #'parser/download-image!
+                     (fn [_]
+                       (throw (ex-info "Unexpected image download" {})))}
+      (fn []
+        (let [article (parser/parse-article "https://example.com/article" image-url
+                                            {:download-image? false})]
+          (is (contains? article :image))
+          (is (nil? (:image article)))
+          (is (= "my title" (:title article)))
+          (is (= "これは太字と強調を含む最初の文です。"
+                 (first (string/split-lines (:text article))))))))))

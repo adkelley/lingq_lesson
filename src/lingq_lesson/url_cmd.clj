@@ -36,7 +36,15 @@
    :course-id    {:desc "LingQ course ID to assign the lesson to"
                   :require false
                   :default nil
-                  :validate positive-course-id?}})
+                  :validate positive-course-id?}
+   :lingq-level  {:desc "LingQ lesson level (1-6)"
+                  :require false
+                  :coerce :long
+                  :validate #(<= 1 % 6)}
+   :dry-run      {:desc "Assess article style and difficulty without creating a lesson"
+                  :require false
+                  :default false
+                  :validate boolean?}})
 
 (def url-doc
   (str
@@ -130,22 +138,42 @@
     (catch IllegalArgumentException cause
       (throw (ex-info "Invalid URL" {:url url} cause)))))
 
+(defn- resolve-difficulty!
+  [article opts verbose]
+  (if-some [lingq-level (:lingq-level opts)]
+    {:lingq-level lingq-level}
+    (assess-difficulty! article verbose)))
+
+(defn- dry-run!
+  [article opts verbose]
+  (let [style (resolve-style-opts! (:text article) opts verbose)
+        difficulty (resolve-difficulty! article opts verbose)]
+    (println "\nDry run complete")
+    (println (format "Title: %s" (:title article)))
+    (println (format "Style: %s" (:vibe style)))
+    (println (format "Lingq Level: %s" (:lingq-level difficulty)))
+    (when-some [level (:jlpt-level difficulty)]
+      (println (format "JLPT Level: %s" level)))))
+
 (defn- create-lesson!
   [opts]
   (let [source-url (validate-url! (:url opts))
         image-url (if (:image opts) (validate-url! (:image opts)) nil)
         course-id (:course-id opts)
-        article (parser/parse-article source-url image-url)
-        verbose (not (:silent opts))
-        audio-future (future (create-audio! article opts verbose))
-        difficulty-future (future (assess-difficulty! article verbose))
-        lesson (build-lesson article
-                             source-url
-                             @audio-future
-                             @difficulty-future
-                             course-id)]
-    (print-lesson-summary! lesson)
-    (lingq/create-lesson lesson)))
+        article (parser/parse-article source-url image-url
+                                      {:download-image? (not (:dry-run opts))})
+        verbose (not (:silent opts))]
+    (if (:dry-run opts)
+      (dry-run! article opts verbose)
+      (let [audio-future (future (create-audio! article opts verbose))
+            difficulty (resolve-difficulty! article opts verbose)
+            lesson (build-lesson article
+                                 source-url
+                                 @audio-future
+                                 difficulty
+                                 course-id)]
+        (print-lesson-summary! lesson)
+        (lingq/create-lesson lesson)))))
 
 (defn url
   [{:keys [opts]}]
