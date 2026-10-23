@@ -3,9 +3,10 @@
 Create a LingQ lesson from an article URL.
 
 The app fetches article content with Defuddle, extracts readable lesson text,
-downloads the article image, estimates the article's JLPT difficulty with
-OpenAI, maps that estimate to a LingQ lesson level, generates OpenAI
-text-to-speech audio, and posts a private Japanese lesson to LingQ.
+downloads the article image, classifies its subject category and estimates JLPT
+reading difficulty with TypeSafe or OpenAI, maps that estimate to a LingQ lesson
+level, generates OpenAI text-to-speech audio, and posts a private Japanese lesson
+to LingQ.
 
 ## Usage
 
@@ -39,109 +40,47 @@ Create a lesson from an article URL:
 bb lingq url https://example.com/article
 ```
 
-The `url` command takes the article URL as its required positional argument.
-Optional flags may follow it:
+The `url` command takes the article URL as its required positional argument:
 
 ```sh
-bb lingq url https://example.com/article \
-  --voice alloy \
-  --vibe news \
-  --course-id 123456 \
-  --lingq-level 4 \
-  --silent
+bb lingq url https://example.com/article --classifier openai --category science-technology
+bb lingq url https://example.com/article --dry-run --classifier typesafe
 ```
 
-On macOS, you can read the article URL from the clipboard and select the first
-course whose title contains `Politics`:
+`--classifier` selects `typesafe` (the default) or `openai`. Both assess article
+category and Japanese reading difficulty. `--category` overrides the selected
+category; `--lingq-level` overrides the resulting lesson level (1–6). These
+options override results; the combined classification request still runs.
 
-```sh
-bb lingq url "$(pbpaste)" \
-  --course-id "$(bb lingq courses ja | awk '/Politics/ {print $1; exit}')"
-```
+Dry runs print title, category, and difficulty without downloading the cover,
+generating audio, or uploading to LingQ.
 
-Use `--lingq-level` with an integer from 1 through 6 to set the lesson difficulty
-directly and skip automatic JLPT difficulty assessment. For example,
-`--lingq-level 4` selects the level mapped to JLPT N2. Audio generation and
-upload still run normally. Omit the option to estimate difficulty automatically.
+Categories follow Yomiuri's broad subject sections:
 
-Use `--dry-run` to fetch an article and print its title, style, and LingQ level
-without creating a lesson:
-
-```sh
-bb lingq url https://example.com/article --dry-run
-```
-
-Dry runs skip cover-image downloads, audio generation, and all LingQ calls.
-OpenAI still assesses style and difficulty unless their respective overrides
-are supplied: `--vibe` skips style classification, and `--lingq-level` skips
-difficulty assessment. The summary displays the effective values, including
-any overrides. Use `--silent` to hide detailed assessments while keeping the
-summary visible.
-
-Use `--silent` to suppress the detailed style-classification and JLPT analysis
-output. Pipeline progress messages remain visible so you can still follow the
-lesson creation process.
-
-Supported voices: `alloy` (male), `echo` (male), `onyx` (male), `nova` (female), `shimmer` (female).
-
-Supported vibes: `business`, `crime`, `entertainment`, `news`, `politics`, `sports`, `lifestyle`, `technology`.
-
-OpenAI intentionally describes the TTS voices in terms of their character and sound, 
-not as explicitly male or female. That said, most listeners perceive them roughly as follows:
-
-Voice | Common Perception | Characteristics
+Category | Subject | Default voice
 --- | --- | ---
-alloy | Male-leaning / androgynous | Neutral, professional, versatile
-onyx | Male | Deep, authoritative, documentary-style
-echo | Male | Energetic, conversational, expressive
-nova | Female | Warm, friendly, approachable
-shimmer | Female | Soft, polished, refined
+`society` | Crime, courts, accidents, social issues | `alloy`
+`politics` | Government, elections, policy | `onyx`
+`business` | Economy, companies, markets | `onyx`
+`sports` | Athletic competition | `echo`
+`international` | Foreign affairs and overseas developments | `alloy`
+`regional` | Local communities and regional affairs | `alloy`
+`science-technology` | Science, space, IT, engineering | `alloy`
+`culture` | Entertainment, arts, books, heritage | `nova`
+`lifestyle` | Food, travel, relationships, everyday living | `nova`
+`education-careers` | Education, admissions, job hunting | `alloy`
+`health` | Medicine, healthcare, wellbeing | `alloy`
+`weather` | Weather and forecasts | `alloy`
+`other` | Content outside these categories | `alloy`
 
-The recommended vibe/voice pairs are:
+Classification prefers a specific subject over geography when the subject is
+central. Categories determine narration instructions and default voices.
+Use `--voice` to override the voice (`alloy`, `echo`, `nova`, `onyx`, or `shimmer`).
+The former article `--style` / `--vibe` options are replaced by `--category`.
 
-Vibe | Voice
---- | ---
-`business` | `onyx`
-`news` | `alloy`
-`politics` | `onyx`
-`sports` | `echo`
-`lifestyle` | `nova`
-`technology` | `alloy`
-
-If neither `--vibe` nor `--voice` is specified, the app classifies the article
-style with OpenAI and chooses a recommended vibe/voice pair automatically.
-
-If `--vibe` is specified, automatic style classification is skipped. 
-If `--voice` is unspecified, then a voice is selected based on the vibe. Any missing value falls back to the default: `news` for vibe and
-`alloy` for voice.
-
-Examples:
-
-```sh
-# Auto-classify article style and choose voice.
-bb lingq url https://example.com/article
-
-# Force only the vibe; voice falls back to alloy.
-bb lingq url https://example.com/article --vibe technology
-
-# Force only the voice; vibe is inferred from the article style.
-bb lingq url https://example.com/article --voice nova
-
-# Force both values.
-bb lingq url https://example.com/article --vibe lifestyle --voice nova
-
-# Hide detailed analysis while retaining pipeline progress messages.
-bb lingq url https://example.com/article --silent
-
-# Override difficulty and skip the JLPT predictor.
-bb lingq url https://example.com/article --lingq-level 4
-
-# Assess style and difficulty without generating audio or uploading.
-bb lingq url https://example.com/article --dry-run --silent
-
-# Preview supplied values without either OpenAI assessment.
-bb lingq url https://example.com/article --dry-run --vibe news --lingq-level 4
-```
+Other options include `--image <url>` for the cover and `--course-id <id>`
+for the destination course. The article URL is required; both it and any
+`--image` URL are validated as HTTP or HTTPS URLs at the CLI boundary.
 
 Print general or command-specific help:
 
@@ -166,11 +105,12 @@ Set API keys in the environment:
 ```sh
 export OPENAI_API_KEY=...
 export LINGQ_API_KEY=...
+export TYPESAFE_API_KEY=...
 ```
 
-Dry runs do not require `LINGQ_API_KEY`. They require `OPENAI_API_KEY` only
-when style or difficulty needs automatic assessment; supplying both `--vibe`
-and `--lingq-level` skips those OpenAI calls.
+Dry runs do not require `LINGQ_API_KEY`. TypeSafe classification requires
+`TYPESAFE_API_KEY`; OpenAI classification and audio generation require
+`OPENAI_API_KEY`.
 
 ## What It Does
 
@@ -184,7 +124,13 @@ Defuddle article parse
 canonical article map
   |
   v
-OpenAI text-to-speech + JLPT level estimate
+TypeSafe or OpenAI category + JLPT assessment
+  |
+  v
+Apply category and difficulty overrides
+  |
+  v
+OpenAI text-to-speech (skipped for dry runs)
   |
   v
 LingQ lesson import
@@ -209,11 +155,15 @@ lock to clear before attaching audio.
 
 ## Difficulty Estimation
 
-`src/lingq_lesson/jlpt_level.clj` sends the cleaned article text to the OpenAI
-Responses API using `gpt-5-mini`. The prompt asks for a structured JSON
-assessment of the article's JLPT reading difficulty, including vocabulary,
-grammar, kanji, sentence complexity, domain difficulty, confidence, and a
-justification.
+The selected classifier evaluates the cleaned article text with two choice
+questions: subject category and Japanese reading difficulty. TypeSafe uses
+`jev-latest` through its System One API; OpenAI uses `gpt-6-luna` through its
+Decisions API. Both use equivalent instructions and descriptions for each
+category and JLPT level.
+
+The difficulty rubric considers vocabulary, grammar, kanji, sentence complexity,
+and required domain knowledge. The application selects the returned choice and
+maps it to a LingQ level; it does not generate a written justification.
 
 The module maps JLPT levels to LingQ levels before import:
 
@@ -226,11 +176,14 @@ N1 -> 5
 Above N1 -> 6
 ```
 
-When `--lingq-level` is omitted, `url_cmd.clj` runs the JLPT estimate in parallel
-with text-to-speech generation and uses the returned `lingq-level` as the lesson
-`level` sent to LingQ. With `--lingq-level`, the supplied integer is used instead
-and the difficulty predictor is skipped. The manual override accepts 1–6;
-automatic estimation can also return 6 for material above typical N1 difficulty.
+Classification completes before audio generation. When `--lingq-level` is
+omitted, the classified level is used for the lesson. When supplied, the integer
+(1–6) overrides that result; the combined classification request still runs.
+Likewise, `--category` overrides the category result without skipping the request.
+
+Dry runs display the effective category and LingQ level. They also display the
+estimated JLPT level when difficulty has not been manually overridden. Model
+estimates are approximate and can differ between providers.
 
 ## Tasks
 
@@ -252,6 +205,10 @@ Run tests:
 bb test
 ```
 
+Tests mock external services, including CLI classifier selection, its TypeSafe
+default, invalid classifier rejection, category/voice overrides, and difficulty
+overrides. Routine tests do not make paid API calls or real LingQ uploads.
+
 Format Clojure files:
 
 ```sh
@@ -267,16 +224,25 @@ clojure -M:fmt check src test scripts
 ## Code Layout
 
 ```text
-src/lingq_lesson/core.clj    CLI entrypoint and command dispatch
-src/lingq_lesson/url_cmd.clj URL command options and orchestration
-src/lingq_lesson/parser.clj  Defuddle integration, text cleanup, image download
-src/lingq_lesson/openai.clj  Shared OpenAI API helpers
-src/lingq_lesson/audio.clj   OpenAI text-to-speech client
-src/lingq_lesson/jlpt_level.clj  OpenAI JLPT/LingQ level estimation
-src/lingq_lesson/lingq.clj   LingQ import, polling, and audio attachment
-scripts/test_runner.clj      Babashka test runner
-test/                        Regression tests
-.github/workflows/ci.yml     GitHub Actions CI
+src/lingq_lesson/core.clj                       CLI entrypoint and dispatch
+src/lingq_lesson/url_cmd.clj                    URL options and orchestration
+src/lingq_lesson/courses_cmd.clj                Course listing
+src/lingq_lesson/parser.clj                     Defuddle, text cleanup, images
+src/lingq_lesson/api.clj                        JSON, HTTP errors, header redaction
+src/lingq_lesson/openai.clj                     Shared OpenAI configuration
+src/lingq_lesson/openai/audio.clj               OpenAI text-to-speech client
+src/lingq_lesson/openai/article_classifier.clj  Decisions client and classification
+src/lingq_lesson/openai/category_classifier.clj OpenAI category question
+src/lingq_lesson/openai/difficulty_classifier.clj OpenAI JLPT rubric and mapping
+src/lingq_lesson/typesafe.clj                   TypeSafe System One client
+src/lingq_lesson/typesafe/article_classifier.clj TypeSafe classification
+src/lingq_lesson/typesafe/category_classifier.clj TypeSafe category question
+src/lingq_lesson/typesafe/difficulty_classifier.clj TypeSafe JLPT rubric and mapping
+src/lingq_lesson/audio_instructions.clj         Category narration instructions
+src/lingq_lesson/lingq.clj                      Import, polling, audio attachment
+scripts/test_runner.clj                        Babashka test runner
+test/                                         Regression tests
+.github/workflows/ci.yml                       GitHub Actions CI
 ```
 
 ## Current Defaults
@@ -285,16 +251,22 @@ test/                        Regression tests
 - status: `private`
 - level: estimated from article text unless `--lingq-level` (1–6) is supplied
 - tags: extracted from article metadata
-- voice: auto-classified unless `--voice` or `--vibe` is provided; fallback `alloy`
-- vibe: auto-classified unless `--voice` or `--vibe` is provided; fallback `news`
+- voice: selected from the effective category unless `--voice` is provided; fallback `alloy`
+- category: classified by the selected provider unless overridden by `--category`
 - TTS model: `gpt-4o-mini-tts`
-- JLPT model: `gpt-5-mini`
+- classifier: `typesafe` using `jev-latest`
+- alternate classifier: `openai` using `gpt-6-luna`
 
 Supported voices:
 
 ```text
 alloy echo nova onyx shimmer
 ```
+
+## Roadmap
+
+See [the roadmap](docs/roadmap.md) for TTS provider research, migration planning,
+and classifier evaluation follow-up.
 
 ## Notes
 

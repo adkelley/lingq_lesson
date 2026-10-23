@@ -1,24 +1,13 @@
 (ns lingq-lesson.difficulty-classifier-test
-  (:require
-   [clojure.string :as string]
-   [clojure.test :refer [deftest is]]
-   [lingq-lesson.openai.difficulty-classifier :as difficulty-classifier]))
+  (:require [clojure.test :refer [deftest is]]
+            [lingq-lesson.openai.difficulty-classifier :as openai]
+            [lingq-lesson.typesafe.difficulty-classifier :as typesafe]))
 
-(deftest response->output-text-uses-direct-output-text
-  (is (= "{\"jlpt-level\":\"N3\"}"
-         (#'difficulty-classifier/response->output-text
-          {:output_text "{\"jlpt-level\":\"N3\"}"}))))
-
-(deftest response->output-text-uses-nested-output-content
-  (is (= "{\"jlpt-level\":\"N3\"}"
-         (#'difficulty-classifier/response->output-text
-          {:output [{:content [{:type "reasoning"
-                                :text "ignored"}
-                               {:type "output_text"
-                                :text "{\"jlpt-level\":\"N3\"}"}]}]}))))
-
-(deftest responses-payload-requests-json-output
-  (let [payload (#'difficulty-classifier/responses-payload "これはテスト記事です。")]
-    (is (= "gpt-5-mini" (:model payload)))
-    (is (= {:format {:type "json_object"}} (:text payload)))
-    (is (string/includes? (:input payload) "これはテスト記事です。"))))
+(deftest providers-share-difficulty-rubric
+  (is (= openai/choice->difficulty typesafe/choice->difficulty))
+  (is (= (:instructions openai/difficulty-question)
+         (:instructions typesafe/difficulty-question)))
+  (is (= (into {} (map (fn [{:keys [value description]}]
+                         [(keyword value) description])
+                       (:choices openai/difficulty-question)))
+         (:criteria typesafe/difficulty-question))))

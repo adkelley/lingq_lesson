@@ -1,34 +1,12 @@
 (ns lingq-lesson.audio-instructions-test
-  (:require
-   [clojure.test :refer [deftest is]]
-   [lingq-lesson.audio-instructions :as audio-instructions]))
+  (:require [clojure.test :refer [deftest is]]
+            [lingq-lesson.audio-instructions :as audio]))
 
-(deftest supported-vibe-recognizes-public-vibes
-  (is (audio-instructions/supported-vibe? "news"))
-  (is (audio-instructions/supported-vibe? "crime"))
-  (is (audio-instructions/supported-vibe? "entertainment"))
-  (is (audio-instructions/supported-vibe? "sports"))
-  (is (audio-instructions/supported-vibe? "lifestyle"))
-  (is (audio-instructions/supported-vibe? "politics"))
-  (is (not (audio-instructions/supported-vibe? "default")))
-  (is (not (audio-instructions/supported-vibe? "unknown"))))
-
-(deftest for-vibe-returns-matching-instructions
-  (is (= audio-instructions/newscaster
-         (audio-instructions/for-vibe "news")))
-  (is (= audio-instructions/sportscaster
-         (audio-instructions/for-vibe "sports")))
-  (is (= audio-instructions/lifestyle
-         (audio-instructions/for-vibe "lifestyle")))
-  (is (= audio-instructions/crime
-         (audio-instructions/for-vibe "crime")))
-  (is (= audio-instructions/entertainment
-         (audio-instructions/for-vibe "entertainment")))
-  (is (= audio-instructions/politics
-         (audio-instructions/for-vibe "politics"))))
-
-(deftest for-vibe-falls-back-to-newscaster
-  (is (= audio-instructions/newscaster
-         (audio-instructions/for-vibe nil)))
-  (is (= audio-instructions/newscaster
-         (audio-instructions/for-vibe "unknown"))))
+(deftest category-narration
+  (doseq [category audio/supported-categories]
+    (is (audio/supported-category? category))
+    (is (seq (audio/for-category category))))
+  (is (= audio/technology (audio/for-category "science-technology")))
+  (is (= audio/entertainment (audio/for-category "culture")))
+  (is (= audio/newscaster (audio/for-category nil)))
+  (is (not (audio/supported-category? "technology"))))

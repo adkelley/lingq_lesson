@@ -1,11 +1,12 @@
-(ns lingq-lesson.openai)
+(ns lingq-lesson.openai
+  (:require [clojure.string :as string]))
 
 (defn api-key [] (System/getenv "OPENAI_API_KEY"))
 (def speech-url "https://api.openai.com/v1/audio/speech")
 (def responses-url "https://api.openai.com/v1/responses")
 
 (defn require-api-key []
-  (when-not (seq (api-key))
+  (when (string/blank? (api-key))
     (throw (ex-info "OPENAI_API_KEY is not set." {}))))
 
 (defn- api-error-message [parsed-body]

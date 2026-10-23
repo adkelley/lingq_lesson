@@ -140,20 +140,25 @@
    "sounding partisan, sensational, cynical, or emotionally reactive. Maintain appropriate gravity while keeping "
    "complex political subjects accessible."))
 
-(def  supported-vibes #{"business" "crime" "entertainment" "news" "politics" "sports" "lifestyle" "technology"})
-
 (def instructions
-  {:business    business
-   :crime       crime
-   :entertainment entertainment
-   :news        newscaster
-   :politics    politics
-   :sports      sportscaster
-   :lifestyle   lifestyle
-   :technology technology})
+  {:society newscaster
+   :politics politics
+   :business business
+   :sports sportscaster
+   :international newscaster
+   :regional newscaster
+   :science-technology technology
+   :culture entertainment
+   :lifestyle lifestyle
+   :education-careers newscaster
+   :health newscaster
+   :weather newscaster
+   :other newscaster})
 
-(defn for-vibe [vibe]
-  (get instructions (some-> vibe keyword) newscaster))
+(def supported-categories (set (map name (keys instructions))))
 
-(defn supported-vibe? [vibe]
-  (contains? supported-vibes vibe))
+(defn for-category [category]
+  (get instructions (some-> category keyword) newscaster))
+
+(defn supported-category? [category]
+  (contains? supported-categories category))

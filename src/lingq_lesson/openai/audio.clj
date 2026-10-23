@@ -18,12 +18,12 @@
 (def default-tts-opts {:model model
                        :voice "alloy"
                        :format "mp3"
-                       :vibe "news"})
+                       :category "other"})
 
 (defn text-to-speech! [text opts]
   (openai/require-api-key)
   (let [request-opts (merge default-tts-opts opts)
-        instructions (audio-instructions/for-vibe (:vibe request-opts))
+        instructions (audio-instructions/for-category (:category request-opts))
         payload (cond-> {:model (:model request-opts)
                          :input text
                          :voice (:voice request-opts)
@@ -45,5 +45,5 @@
         {:keys [body status]} response]
     (when-not (<= 200 status 299)
       (api/throw-response-error (assoc response :body (api/body->string body))
-                                   headers openai/status-message))
+                                headers openai/status-message))
     body))

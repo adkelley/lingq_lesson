@@ -1,106 +1,82 @@
 (ns lingq-lesson.core-test
-  (:require
-   [clojure.string :as str]
-   [clojure.test :refer [deftest is testing]]
-   [lingq-lesson.openai.audio :as audio]
-   [lingq-lesson.openai.difficulty-classifier :as difficulty-classifier]
-   [lingq-lesson.lingq :as lingq]
-   [lingq-lesson.parser :as parser]
-   [lingq-lesson.openai.style-classifier :as style-classifier]
-   [lingq-lesson.url-cmd :as url-cmd]))
+  (:require [clojure.test :refer [deftest is testing]]
+            [clojure.string :as str]
+            [lingq-lesson.url-cmd :as url]
+            [lingq-lesson.core :as core]
+            [lingq-lesson.parser :as parser]
+            [lingq-lesson.openai.article-classifier :as openai]
+            [lingq-lesson.typesafe.article-classifier :as typesafe]
+            [lingq-lesson.openai.audio :as audio]
+            [lingq-lesson.lingq :as lingq]))
 
-(deftest crime-and-entertainment-use-recommended-voices
-  (is (= "onyx" (#'url-cmd/resolve-voice "crime")))
-  (is (= "nova" (#'url-cmd/resolve-voice "entertainment"))))
+(deftest classifier-dispatch-category-and-overrides
+  (doseq [provider ["openai" "typesafe"] dry-run [true false]]
+    (let [calls (atom [])
+          classify (fn [text]
+                     (is (= "本文" text))
+                     {:category "science-technology" :difficulty {:lingq-level 3}})]
+      (with-redefs [parser/parse-article (fn [_ image options]
+                                           (is (= "https://example.com/cover" image))
+                                           (is (= (not dry-run) (:download-image? options)))
+                                           {:title "Title" :text "本文"})
+                    openai/article-text->classification! (fn [text] (swap! calls conj "openai") (classify text))
+                    typesafe/article-text->classification! (fn [text] (swap! calls conj "typesafe") (classify text))
+                    audio/text-to-speech! (fn [_ opts]
+                                            (is (= {:category "culture" :voice "onyx"} opts))
+                                            (swap! calls conj :audio) :audio)
+                    lingq/create-lesson (fn [lesson]
+                                          (is (= 4 (:level lesson)))
+                                          (is (= :audio (:audio lesson)))
+                                          (swap! calls conj :upload))]
+        (let [output (with-out-str
+                       (#'url/create-lesson! {:url "https://example.com/article"
+                                              :image "https://example.com/cover"
+                                              :classifier provider :dry-run dry-run
+                                              :category "culture" :voice "onyx" :lingq-level 4}))]
+          (is (= (if dry-run [provider] [provider :audio :upload]) @calls))
+          (when dry-run
+            (is (str/includes? output "Category: culture"))
+            (is (str/includes? output "Lingq Level: 4"))))))))
 
-(deftest course-id-validation
-  (is (#'url-cmd/positive-course-id? "123456"))
-  (is (#'url-cmd/positive-course-id? 123456))
-  (is (not (#'url-cmd/positive-course-id? nil)))
-  (is (not (#'url-cmd/positive-course-id? "")))
-  (is (not (#'url-cmd/positive-course-id? "abc")))
-  (is (not (#'url-cmd/positive-course-id? "0")))
-  (is (not (#'url-cmd/positive-course-id? "-1"))))
+(deftest recommended-voices
+  (is (= "alloy" (#'url/resolve-voice "science-technology")))
+  (is (= "nova" (#'url/resolve-voice "culture"))))
 
-(deftest dry-run-assesses-article-and-honors-overrides
-  (doseq [overrides [{} {:vibe "sports"} {:lingq-level 4}
-                     {:vibe "sports" :lingq-level 4}]
-          silent [false true]]
-    (testing (str "overrides " overrides ", silent " silent)
+(deftest cli-selects-only-the-requested-classifier
+  (doseq [[flags expected category level]
+          [[[] "typesafe" "health" 4]
+           [["--classifier" "typesafe"] "typesafe" "health" 4]
+           [["--classifier" "openai"] "openai" "science-technology" 3]]]
+    (testing (str "classifier flags: " flags)
       (let [calls (atom [])
-            article {:title "Sample article" :text "本文です。"}
-            opts (merge {:url "https://example.com/article"
-                         :dry-run true :silent silent}
-                        overrides)]
-        (with-redefs [parser/parse-article
-                      (fn [url image-url options]
-                        (swap! calls conj [:parse url image-url options])
-                        article)
-                      style-classifier/article-text->style!
-                      (fn [text verbose]
-                        (swap! calls conj [:style text verbose])
-                        (when verbose (println "Detailed style assessment"))
-                        {:vibe "news"})
-                      difficulty-classifier/article-text->difficulty!
-                      (fn [text verbose]
-                        (swap! calls conj [:difficulty text verbose])
-                        (when verbose (println "Detailed difficulty assessment"))
-                        {:lingq-level 3})
-                      audio/text-to-speech!
-                      (fn [& _] (throw (ex-info "Unexpected audio generation" {})))
-                      lingq/create-lesson
-                      (fn [& _] (throw (ex-info "Unexpected LingQ upload" {})))]
-          (let [output (with-out-str (#'url-cmd/create-lesson! opts))]
-            (is (= [:parse (:url opts) nil {:download-image? false}]
-                   (first @calls)))
-            (is (= (if (:vibe overrides) [] [[:style (:text article) (not silent)]])
-                   (filterv #(= :style (first %)) @calls)))
-            (is (= (if (:lingq-level overrides) [] [[:difficulty (:text article) (not silent)]])
-                   (filterv #(= :difficulty (first %)) @calls)))
-            (is (str/includes? output "Dry run complete"))
-            (is (str/includes? output "Title: Sample article"))
-            (is (str/includes? output (str "Style: " (or (:vibe overrides) "news"))))
-            (is (str/includes? output (str "Lingq Level: " (or (:lingq-level overrides) 3))))
-            (when silent
-              (is (not (str/includes? output "Detailed style assessment"))))
-            (when silent
-              (is (not (str/includes? output "Detailed difficulty assessment"))))))))))
+            classify (fn [provider result text]
+                       (swap! calls conj provider)
+                       (is (= "本文" text))
+                       result)]
+        (with-redefs [parser/parse-article (fn [& _] {:title "Title" :text "本文"})
+                      openai/article-text->classification!
+                      (partial classify "openai"
+                               {:category "science-technology" :difficulty {:lingq-level 3}})
+                      typesafe/article-text->classification!
+                      (partial classify "typesafe"
+                               {:category "health" :difficulty {:lingq-level 4}})
+                      audio/text-to-speech! (fn [& _] (throw (ex-info "Unexpected audio" {})))
+                      lingq/create-lesson (fn [& _] (throw (ex-info "Unexpected upload" {})))]
+          (let [output (with-out-str
+                         (apply core/-main
+                                (into ["url" "https://example.com/article" "--dry-run"] flags)))]
+            (is (= [expected] @calls) "Only the selected provider should run, exactly once")
+            (is (str/includes? output (str "Category: " category)))
+            (is (str/includes? output (str "Lingq Level: " level)))))))))
 
-(deftest normal-creation-still-generates-audio-and-uploads
-  (let [calls (atom [])
-        article {:title "Sample article" :text "本文です。" :image :cover}]
-    (with-redefs [parser/parse-article
-                  (fn [url image-url options]
-                    (swap! calls conj [:parse url image-url options])
-                    article)
-                  style-classifier/article-text->style!
-                  (fn [text verbose]
-                    (swap! calls conj [:style text verbose])
-                    {:vibe "news"})
-                  difficulty-classifier/article-text->difficulty!
-                  (fn [text verbose]
-                    (swap! calls conj [:difficulty text verbose])
-                    {:lingq-level 3})
-                  audio/text-to-speech!
-                  (fn [text options]
-                    (swap! calls conj [:audio text options])
-                    :generated-audio)
-                  lingq/create-lesson
-                  (fn [lesson]
-                    (swap! calls conj [:upload lesson]))]
-      (with-out-str
-        (#'url-cmd/create-lesson! {:url "https://example.com/article"
-                                   :silent true :course-id "123"}))
-      (is (= [:parse "https://example.com/article" nil {:download-image? true}]
-             (first @calls)))
-      (is (= [[:style (:text article) false]]
-             (filterv #(= :style (first %)) @calls)))
-      (is (= [[:difficulty (:text article) false]]
-             (filterv #(= :difficulty (first %)) @calls)))
-      (is (= [[:audio "Sample article\n\n本文です。" {:voice "alloy" :vibe "news"}]]
-             (filterv #(= :audio (first %)) @calls)))
-      (is (= [[:upload (merge article {:status "private" :level 3
-                                       :audio :generated-audio
-                                       :original-url "https://example.com/article"
-                                       :course-id "123"})]]
-             (filterv #(= :upload (first %)) @calls))))))
+(deftest cli-rejects-unknown-classifier-before-processing
+  (let [errors (atom [])]
+    (with-redefs [parser/parse-article (fn [& _] (throw (ex-info "Unexpected parsing" {})))
+                  openai/article-text->classification! (fn [& _] (throw (ex-info "Unexpected OpenAI call" {})))
+                  typesafe/article-text->classification! (fn [& _] (throw (ex-info "Unexpected TypeSafe call" {})))
+                  url/url (fn [& _] (throw (ex-info "Unexpected command dispatch" {})))]
+      (with-redefs-fn {#'core/dispatch-options (assoc @#'core/dispatch-options
+                                                      :error-fn #(swap! errors conj %))}
+        #(core/-main "url" "https://example.com/article" "--classifier" "unknown"))
+      (is (seq @errors))
+      (is (some #(str/includes? (:msg %) "classifier") @errors)))))

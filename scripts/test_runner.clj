@@ -9,7 +9,7 @@
    [lingq-lesson.lingq-test]
    [lingq-lesson.openai-test]
    [lingq-lesson.parser-test]
-   [lingq-lesson.style-classifier-test]))
+   [lingq-lesson.category-classifier-test]))
 
 (defn run []
   (let [{:keys [fail error]} (test/run-tests 'lingq-lesson.audio-instructions-test
@@ -20,6 +20,6 @@
                                              'lingq-lesson.lingq-test
                                              'lingq-lesson.openai-test
                                              'lingq-lesson.parser-test
-                                             'lingq-lesson.style-classifier-test)]
+                                             'lingq-lesson.category-classifier-test)]
     (when (pos? (+ fail error))
       (System/exit 1))))
