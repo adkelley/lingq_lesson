@@ -2,12 +2,13 @@
   (:require [lingq-lesson.lingq :as lingq]))
 
 (def courses-spec
-  {:language {:desc "LingQ language code"
+  {:language {:desc "LingQ language code (Japanese only: ja)"
               :require false
-              :default "ja"}})
+              :default "ja"
+              :validate #{"ja"}}})
 
 (def courses-doc
-  "List LingQ courses for a language")
+  "List Japanese LingQ courses")
 
 (defn- print-courses!
   [courses]

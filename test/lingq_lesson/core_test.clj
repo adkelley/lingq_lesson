@@ -80,3 +80,12 @@
         #(core/-main "url" "https://example.com/article" "--classifier" "unknown"))
       (is (seq @errors))
       (is (some #(str/includes? (:msg %) "classifier") @errors)))))
+
+(deftest cli-rejects-other-course-languages
+  (let [errors (atom [])]
+    (with-redefs [lingq/get-my-collections
+                  (fn [& _] (throw (ex-info "Unexpected LingQ call" {})))]
+      (with-redefs-fn {#'core/dispatch-options
+                       (assoc @#'core/dispatch-options :error-fn #(swap! errors conj %))}
+        #(core/-main "courses" "fr"))
+      (is (seq @errors)))))

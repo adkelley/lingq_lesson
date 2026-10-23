@@ -220,3 +220,15 @@
           (is (= "my title" (:title article)))
           (is (= "これは太字と強調を含む最初の文です。"
                  (first (string/split-lines (:text article))))))))))
+
+(deftest language-metadata-guard
+  (doseq [language [nil "" " " "ja" "ja-JP" "JA-jp" "ja_JP"]]
+    (is (nil? (#'parser/require-japanese! language))))
+  (doseq [language ["fr" "fr-FR" "en" "zh" "japanese"]]
+    (with-redefs-fn {#'parser/fetch-defuddle-json
+                     (fn [_] (json/generate-string {:language language}))
+                     #'parser/download-image!
+                     (fn [& _] (throw (ex-info "Unexpected image download" {})))}
+      #(is (thrown-with-msg? clojure.lang.ExceptionInfo
+                             #"Only Japanese articles are supported"
+                             (parser/parse-article "https://example.com/article" nil))))))

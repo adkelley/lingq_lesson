@@ -1,6 +1,6 @@
 # LingQ Lesson
 
-Create a LingQ lesson from an article URL.
+Create a private Japanese LingQ lesson from an article URL.
 
 The app fetches article content with Defuddle, extracts readable lesson text,
 downloads the article image, classifies its subject category and estimates JLPT
@@ -8,9 +8,22 @@ reading difficulty with TypeSafe or OpenAI, maps that estimate to a LingQ lesson
 level, generates OpenAI text-to-speech audio, and posts a private Japanese lesson
 to LingQ.
 
+## Language support
+
+Lesson creation and course listing currently support Japanese only. Lessons are
+imported into LingQ using `ja`, and difficulty is estimated with the Japanese
+JLPT rubric. French and other languages are not supported; a manual level
+override does not change the lesson language.
+
+Before downloading the cover or calling a classifier, the app checks Defuddle's
+language metadata. Explicit non-Japanese language tags are rejected, including
+in dry runs. Japanese tags such as `ja` and `ja-JP` are accepted. Missing or blank
+metadata is allowed: this is a metadata guard, not automatic language detection,
+so use Japanese articles even when the source does not declare its language.
+
 ## Usage
 
-List the courses available in a LingQ language:
+List your Japanese LingQ courses (`ja` is the default and only supported language):
 
 ```sh
 bb lingq courses ja

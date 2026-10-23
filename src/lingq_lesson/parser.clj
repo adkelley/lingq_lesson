@@ -121,6 +121,14 @@
         type (or (meta-content-by-property (:metaTags parsed) "og:type") "")]
     [site-name type]))
 
+(defn- require-japanese!
+  [language]
+  ;; Missing metadata does not establish that the article is non-Japanese.
+  (when (and (not (string/blank? language))
+             (not (re-matches #"(?i)ja(?:[-_].+)?" (string/trim language))))
+    (throw (ex-info "Only Japanese articles are supported."
+                    {:language language}))))
+
 (defn- defuddle->article
   "Map parsed defuddle output into canonical article map"
   [parsed]
@@ -147,6 +155,7 @@
          (-> article-url
              fetch-defuddle-json
              parse-defuddle-json)
+         _ (require-japanese! (:language parsed))
          article (defuddle->article parsed)]
      (assoc article :image
             (when download-image?

@@ -73,7 +73,7 @@
                  :validate #(contains? supported-classifiers %)}})
 
 (def url-doc
-  "Create a LingQ lesson from an article URL. Category determines narration instructions and the default voice.")
+  "Create a private Japanese LingQ lesson from an article URL. Other languages are not supported. Category determines narration instructions and the default voice.")
 
 (def ^:private category->voice
   {"society" "alloy"
