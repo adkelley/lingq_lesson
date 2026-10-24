@@ -5,6 +5,16 @@
    [hato.client :as hc])
   (:import java.nio.charset.StandardCharsets))
 
+;; LingQ tokenizes imported lessons asynchronously.  Fifteen seconds was too
+;; short for larger lessons (and left an otherwise successfully-created lesson
+;; stranded without its audio).  Keep polling for a bounded amount of time so
+;; a genuinely stuck lesson still fails instead of hanging forever.
+(def ^:private tokenization-poll-interval-seconds 5)
+(def ^:private tokenization-max-wait-seconds 180)
+(def ^:private max-retries 3)
+(def ^:private timestamp-poll-interval-seconds 5)
+(def ^:private timestamp-max-wait-seconds 120)
+(def ^:private default-retry-after-seconds 30)
 (def ^:private lingq-api-key (System/getenv "LINGQ_API_KEY"))
 
 (defn parse-json-body [body]
@@ -59,15 +69,7 @@
 (defn- request-headers []
   {"authorization" (format "Token %s" lingq-api-key)})
 
-(def ^:private max-retries 3)
-(def ^:private default-retry-after-seconds 30)
 
-;; LingQ tokenizes imported lessons asynchronously.  Fifteen seconds was too
-;; short for larger lessons (and left an otherwise successfully-created lesson
-;; stranded without its audio).  Keep polling for a bounded amount of time so
-;; a genuinely stuck lesson still fails instead of hanging forever.
-(def ^:private tokenization-poll-interval-seconds 3)
-(def ^:private tokenization-max-wait-seconds 180)
 
 (defn- retry-after-seconds
   "Reads the Retry-After response header (seconds form), falling back to a
@@ -137,9 +139,9 @@
         {:keys [body status]} response
         response-body (body->str body)
         parsed-body (parse-json-body response-body)]
-    (println "HTTP status:" status)
-    (println "Location:" (get-in response [:headers "location"]))
-    (println "lesson id:" (or (:id parsed-body) (:pk parsed-body) "<none in body>"))
+    ;; (println "HTTP status:" status)
+    ;; (println "Location:" (get-in response [:headers "location"]))
+    ;; (println "lesson id:" (or (:id parsed-body) (:pk parsed-body) "<none in body>"))
     (when-not (<= 200 status 299)
       (throw-response-error (assoc response :body response-body) (request-headers)))
     (when-not parsed-body
@@ -153,6 +155,7 @@
   the tokenization lock returns 200 but drops the audio); tags/description are
   set at import time instead (see multipart-parts)."
   [lesson-id audio]
+  (println "Uploading audio…")
   (let [url (format "https://www.lingq.com/api/v3/ja/lessons/%s/" lesson-id)
         multipart [{:name "audio"
                     :content audio
@@ -164,38 +167,100 @@
         {:keys [body status]} response
         response-body (body->str body)
         parsed-body (parse-json-body response-body)]
-    (println "PATCH status:" status)
+    ;; (println "PATCH status:" status)
     (when-not (<= 200 status 299)
       (throw-response-error (assoc response :body response-body) (request-headers)))
     parsed-body))
 
-(defn- get-lesson
+(defn- get-lesson-response [lesson-id]
+  (let [url (format "https://www.lingq.com/api/v3/ja/lessons/%s/"
+                    lesson-id)]
+    (hc/get url {:headers (request-headers)
+                 :throw-exceptions false})))
+
+(defn- get-lesson [lesson-id]
+  (let [response (get-lesson-response lesson-id)
+        {:keys [body status]} response
+        response-body (body->str body)]
+    (when-not (<= 200 status 299)
+      (throw-response-error
+       (assoc response :body response-body)
+       (request-headers)))
+    (parse-json-body response-body)))
+
+(defn- wait-for-tokenization
   "Fetches a lesson by id so we can verify what actually stuck server-side.
   Right after import LingQ locks the lesson while it tokenizes the text
   (400 {:errorType \"locked\" :isLocked \"TOKENIZE_TEXT\"}); we poll past that."
   [lesson-id]
-  (let [url (format "https://www.lingq.com/api/v3/ja/lessons/%s/" lesson-id)]
-    (loop [elapsed 0]
-      (let [response (hc/get url {:headers (request-headers) :throw-exceptions false})
-            {:keys [body status]} response
-            response-body (body->str body)
-            parsed-body (parse-json-body response-body)]
-        (cond
-          (<= 200 status 299)
-          parsed-body
+  (println "Waiting for tokenization to finish…")
+  (loop [elapsed 0]
+    (let [response (get-lesson-response lesson-id)
+          {:keys [body status]} response
+          response-body (body->str body)
+          parsed-body (parse-json-body response-body)]
+      (cond
+        (<= 200 status 299)
+        parsed-body
 
-          (and (= 400 status) (= "locked" (:errorType parsed-body))
-               (< elapsed tokenization-max-wait-seconds))
-          (let [wait-seconds (min tokenization-poll-interval-seconds
-                                  (- tokenization-max-wait-seconds elapsed))]
-            (println (format "  lesson locked (%s); retrying in %ds (%ds/%ds elapsed)"
-                             (:isLocked parsed-body) wait-seconds elapsed
-                             tokenization-max-wait-seconds))
-            (Thread/sleep (* wait-seconds 1000))
-            (recur (+ elapsed wait-seconds)))
+        (and (= 400 status) (= "locked" (:errorType parsed-body))
+             (< elapsed tokenization-max-wait-seconds))
+        (let [wait-seconds (min tokenization-poll-interval-seconds
+                                (- tokenization-max-wait-seconds elapsed))]
+          (println (format "  lesson locked (%s); retrying in %ds (%ds/%ds elapsed)"
+                           (:isLocked parsed-body) wait-seconds elapsed
+                           tokenization-max-wait-seconds))
+          (Thread/sleep (* wait-seconds 1000))
+          (recur (+ elapsed wait-seconds)))
 
-          :else
-          (throw-response-error (assoc response :body response-body) (request-headers)))))))
+        :else
+        (throw-response-error (assoc response :body response-body) (request-headers))))))
+
+(defn- wait-for-audio [lesson-id]
+  (loop [elapsed 0]
+    (let [lesson (get-lesson lesson-id)]
+      (cond
+        (and (seq (:audioUrl lesson))
+             (false? (:audioPending lesson)))
+        lesson
+
+        (>= elapsed tokenization-max-wait-seconds)
+        (throw (ex-info "Timed out waiting for audio to be processed"
+                        {:lesson-id lesson-id
+                         :audioPending (:audioPending lesson)}))
+
+        :else
+        (let [wait-seconds (min tokenization-poll-interval-seconds
+                                (- tokenization-max-wait-seconds elapsed))]
+          (println "Waiting for audio processing…")
+          (Thread/sleep (* wait-seconds 1000))
+          (recur (+ elapsed wait-seconds)))))))
+
+(defn- generate-timestamps [lesson-id]
+  (println "Generating timestamps…")
+  (let [url (format "https://www.lingq.com/api/v3/ja/lessons/%s/genaudio/"
+                    lesson-id)]
+    (hc/post url {:headers (request-headers)
+                  :throw-exceptions false})))
+
+(defn- wait-for-timestamps [lesson-id]
+  (loop [elapsed 0]
+    (let [lesson (get-lesson lesson-id)]
+      (cond
+        (nil? (:isLocked lesson))
+        lesson
+
+        (>= elapsed timestamp-max-wait-seconds)
+        (throw (ex-info "Timed out waiting for timestamps"
+                        {:lesson-id lesson-id}
+                        {:isLocked (:isLocked lesson)}))
+        :else
+        (let [wait-seconds (min timestamp-poll-interval-seconds (- timestamp-max-wait-seconds elapsed))]
+          (println (format "  lesson locked (%s); retrying in %ds (%ds/%ds elapsed)"
+                           (:isLocked lesson) wait-seconds elapsed
+                           timestamp-max-wait-seconds))
+          (Thread/sleep (* wait-seconds 1000))
+          (recur (+ elapsed wait-seconds)))))))
 
 (defn create-lesson
   [lesson]
@@ -216,28 +281,30 @@
         id (:id lesson)]
     (if id
       (do
-        (println "Lesson" id (:lessonURL lesson))
         ;; Tags/description were set at import. Only audio remains, and a PATCH on a
         ;; locked (tokenizing) lesson returns 200 but drops the audio, so wait for
         ;; the lock to clear first; get-lesson polls past it.
-        (println "Waiting for tokenization to finish…")
-        (get-lesson id)
+        (wait-for-tokenization id) ; text processing finished
         (patch-lesson id audio)
+        (wait-for-audio id)         ; audioUrl present, audioPending false
+        (generate-timestamps id)
+        (wait-for-timestamps id)
         ;; Re-fetch to confirm what stuck. Best-effort: a verify hiccup must not
         ;; fail the run. Audio transcodes async, so audioPending may be true right
         ;; after; duration matching the mp3 length means the file was accepted.
         (try
           (let [saved (get-lesson id)]
-            (println "  audioUrl:    " (:audioUrl saved))
-            (println "  audioPending:" (:audioPending saved))
-            (println "  duration:    " (:duration saved))
-            (println "  wordCount:   " (:wordCount saved))
-            (println "  tags:        " (:tags saved))
-            (println "  level:       " (:level saved))
-            (println "  title:       " (:title saved))
-            (println "  course id:   " (:collectionId saved))
-            (println "  course title:" (:collectionTitle saved))
-            (println "  description: " (:description saved)))
+            (println "Lesson uploaded successfully!")
+            (println "  title:        " (:title saved))
+            (println "  description:  " (:description saved))
+            (println "  lesson id:    " id)
+            (println "  course id:    " (:collectionId saved))
+            (println "  course title: " (:collectionTitle saved))
+            (println "  audioUrl:     " (:audioUrl saved))
+            (println (format "  duration:      %d seconds" (:duration saved)))
+            (println "  wordCount:    " (:wordCount saved))
+            (println "  tags:         " (:tags saved))
+            (println "  level:        " (:level saved)))
           (catch Exception e
             (println "  (verify skipped:" (ex-message e) "— open the URL above)"))))
       (println "No lesson id in import response; skipping audio/tags attach.")))
