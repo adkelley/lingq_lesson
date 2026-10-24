@@ -20,7 +20,7 @@
                              :body audio-bytes})]
       (is (= audio-bytes
              (tts/text-to-speech! "lesson text" {:voice "nova"
-                                                   :category "lifestyle"})))
+                                                 :category "lifestyle"})))
       (is (= openai/speech-url (:url @request)))
       (is (= {:headers {"authorization" "Bearer test-key"
                         "content-type" "application/json"}

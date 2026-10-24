@@ -123,8 +123,8 @@
     (println-status
      (str "Creating audio for " title " with category: " category " and voice: " voice))
     (tts/text-to-speech! (str title "\n\n" text)
-                           {:voice voice
-                            :category category})))
+                         {:voice voice
+                          :category category})))
 
 (defn- build-lesson
   [article source-url audio-result difficulty course-id]
@@ -135,10 +135,10 @@
           :original-url (or (:original-url article) source-url)
           :course-id course-id}))
 
-(defn- print-lesson-summary!
-  [{:keys [title original-url]}]
-  (println "Uploading lesson to Lingq:")
-  (println (format "  title: %s\n  url:   %s\n" title original-url)))
+;; (defn- print-lesson-summary!
+;;   [{:keys [title original-url]}]
+;;   (println "Uploading lesson to Lingq:")
+;;   (println (format "  title: %s\n  url:   %s\n" title original-url)))
 
 (defn- print-assessment!
   [article category difficulty]
@@ -170,7 +170,7 @@
                                  audio
                                  difficulty
                                  course-id)]
-        (print-lesson-summary! lesson)
+        ;; (print-lesson-summary! lesson)
         (lingq/create-lesson lesson)))))
 
 (defn url

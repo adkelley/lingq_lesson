@@ -6,7 +6,7 @@ The app fetches article content with Defuddle, extracts readable lesson text,
 downloads the article image, classifies its subject category and estimates JLPT
 reading difficulty with TypeSafe or OpenAI, maps that estimate to a LingQ lesson
 level, generates OpenAI text-to-speech audio, and posts a private Japanese lesson
-to LingQ.
+to LingQ with timestamps that synchronize the text and audio.
 
 ## Language support
 
@@ -150,6 +150,9 @@ LingQ lesson import
   |
   v
 LingQ audio attachment
+  |
+  v
+LingQ timestamp generation
 ```
 
 The created lesson includes:
@@ -158,13 +161,15 @@ The created lesson includes:
 - cleaned article text
 - cover image
 - OpenAI-generated audio
+- timestamps that synchronize lesson text with the audio
 - description
 - source-derived tags
 - original URL
 - estimated or explicitly selected LingQ level
 
 LingQ tokenizes imported lessons asynchronously, so the app waits for the lesson
-lock to clear before attaching audio.
+lock to clear before attaching audio. Once audio processing finishes, the app
+asks LingQ to generate timestamps and waits for timestamp generation to finish.
 
 ## Difficulty Estimation
 
@@ -252,7 +257,7 @@ src/lingq_lesson/typesafe/article_classifier.clj TypeSafe classification
 src/lingq_lesson/typesafe/category_classifier.clj TypeSafe category question
 src/lingq_lesson/typesafe/difficulty_classifier.clj TypeSafe JLPT rubric and mapping
 src/lingq_lesson/audio_instructions.clj         Category narration instructions
-src/lingq_lesson/lingq.clj                      Import, polling, audio attachment
+src/lingq_lesson/lingq.clj                      Import, polling, audio attachment, timestamps
 scripts/test_runner.clj                        Babashka test runner
 test/                                         Regression tests
 .github/workflows/ci.yml                       GitHub Actions CI
