@@ -69,8 +69,6 @@
 (defn- request-headers []
   {"authorization" (format "Token %s" lingq-api-key)})
 
-
-
 (defn- retry-after-seconds
   "Reads the Retry-After response header (seconds form), falling back to a
   default when it is absent or not an integer."
@@ -302,9 +300,9 @@
             (println "  course title: " (:collectionTitle saved))
             (println "  audioUrl:     " (:audioUrl saved))
             (println (format "  duration:      %d seconds" (:duration saved)))
-            (println "  wordCount:       " (:wordCount saved))
-            (println "  tags:            " (:tags saved))
-            (println "  level:           " (:level saved)))
+            (println "  wordCount:    " (:wordCount saved))
+            (println "  tags:         " (:tags saved))
+            (println "  level:        " (:level saved)))
           (catch Exception e
             (println "  (verify skipped:" (ex-message e) "— open the URL above)"))))
       (println "No lesson id in import response; skipping audio/tags attach.")))
