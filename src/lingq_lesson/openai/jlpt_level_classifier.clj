@@ -1,16 +1,8 @@
-(ns lingq-lesson.openai.difficulty-classifier)
+(ns lingq-lesson.openai.jlpt-level-classifier)
 
-(def choice->difficulty
-  {"n5"       {:jlpt-level "N5" :lingq-level 1}
-   "n4"       {:jlpt-level "N4" :lingq-level 2}
-   "n3"       {:jlpt-level "N3" :lingq-level 3}
-   "n2"       {:jlpt-level "N2" :lingq-level 4}
-   "n1"       {:jlpt-level "N1" :lingq-level 5}
-   "above-n1" {:jlpt-level "Above N1" :lingq-level 6}})
-
-(def difficulty-question
+(def jlpt-level-question
   {:type "choice"
-   :name "difficulty"
+   :name "jlpt-level"
    :instructions
    (str
     "Estimate the overall Japanese reading proficiency needed to "
@@ -21,21 +13,21 @@
     "Judge the article as a whole rather than its hardest isolated word "
     "or sentence. Proper nouns and a technical subject alone do not "
     "make an article advanced. Select the best-fitting level.")
-   :choices [{:value "n5"
+   :choices [{:value "N5"
               :description
               (str
                "Basic Japanese: familiar everyday words, elementary grammar, "
                "common basic kanji, and short, simple sentences. Meaning is "
                "explicit and requires little inference or background knowledge.")}
 
-             {:value "n4"
+             {:value "N4"
               :description
               (str
                "Elementary Japanese: everyday topics with common vocabulary "
                "and kanji, basic connected sentences, and straightforward "
                "explanations or narratives. Some simple subordinate clauses.")}
 
-             {:value "n3"
+             {:value "N3"
               :description
               (str
                "Intermediate Japanese: everyday topics and accessible reporting "
@@ -43,7 +35,7 @@
                "sentences and intermediate grammar; some inference is needed, "
                "but little specialized knowledge.")}
 
-             {:value "n2"
+             {:value "N2"
               :description
               (str
                "Upper-intermediate Japanese: general newspaper and magazine "
@@ -51,7 +43,7 @@
                "and kanji, complex sentences, and advanced grammar. Understanding "
                "may require following arguments and implied relationships.")}
 
-             {:value "n1"
+             {:value "N1"
               :description
               (str
                "Advanced Japanese: complex editorials, essays, and sophisticated "

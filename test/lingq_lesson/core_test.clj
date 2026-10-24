@@ -6,37 +6,44 @@
             [lingq-lesson.parser :as parser]
             [lingq-lesson.openai.article-classifier :as openai]
             [lingq-lesson.typesafe.article-classifier :as typesafe]
-            [lingq-lesson.openai.audio :as audio]
+            [lingq-lesson.openai.text-to-speech :as tts]
             [lingq-lesson.lingq :as lingq]))
 
 (deftest classifier-dispatch-category-and-overrides
-  (doseq [provider ["openai" "typesafe"] dry-run [true false]]
+  (doseq [provider ["openai" "typesafe"]
+          dry-run [true false]
+          override-level [nil "N2"]]
     (let [calls (atom [])
           classify (fn [text]
                      (is (= "本文" text))
-                     {:category "science-technology" :difficulty {:lingq-level 3}})]
+                     {:category "science-technology" :jlpt-level "N3"})]
       (with-redefs [parser/parse-article (fn [_ image options]
                                            (is (= "https://example.com/cover" image))
                                            (is (= (not dry-run) (:download-image? options)))
                                            {:title "Title" :text "本文"})
                     openai/article-text->classification! (fn [text] (swap! calls conj "openai") (classify text))
                     typesafe/article-text->classification! (fn [text] (swap! calls conj "typesafe") (classify text))
-                    audio/text-to-speech! (fn [_ opts]
-                                            (is (= {:category "culture" :voice "onyx"} opts))
-                                            (swap! calls conj :audio) :audio)
+                    tts/text-to-speech! (fn [_ opts]
+                                          (is (= {:category "culture" :voice "onyx"} opts))
+                                          (swap! calls conj :audio) :audio)
                     lingq/create-lesson (fn [lesson]
-                                          (is (= 4 (:level lesson)))
+                                          (is (= (if override-level 4 3) (:level lesson)))
                                           (is (= :audio (:audio lesson)))
                                           (swap! calls conj :upload))]
         (let [output (with-out-str
                        (#'url/create-lesson! {:url "https://example.com/article"
                                               :image "https://example.com/cover"
                                               :classifier provider :dry-run dry-run
-                                              :category "culture" :voice "onyx" :lingq-level 4}))]
-          (is (= (if dry-run [provider] [provider :audio :upload]) @calls))
-          (when dry-run
-            (is (str/includes? output "Category: culture"))
-            (is (str/includes? output "Lingq Level: 4"))))))))
+                                              :category "culture" :voice "onyx" :jlpt-level override-level}))]
+          (is (= (cond-> (if override-level [] [provider])
+                   (not dry-run) (into [:audio :upload]))
+                 @calls))
+          (is (str/includes? output "Category: culture"))
+          (is (str/includes? output (str "Lingq Level: " (if override-level 4 3))))
+          (is (str/includes? output (str "JLPT Level: " (or override-level "N3"))))
+          (when-not dry-run
+            (is (< (str/index-of output "JLPT Level:")
+                   (str/index-of output "Creating audio")))))))))
 
 (deftest recommended-voices
   (is (= "alloy" (#'url/resolve-voice "science-technology")))
@@ -44,8 +51,9 @@
 
 (deftest cli-selects-only-the-requested-classifier
   (doseq [[flags expected category level]
-          [[[] "typesafe" "health" 4]
+          [[[] "openai" "science-technology" 3]
            [["--classifier" "typesafe"] "typesafe" "health" 4]
+           [["--classifier" "typesafe" "--jlpt-level" "n3"] "typesafe" "health" 3]
            [["--classifier" "openai"] "openai" "science-technology" 3]]]
     (testing (str "classifier flags: " flags)
       (let [calls (atom [])
@@ -56,11 +64,11 @@
         (with-redefs [parser/parse-article (fn [& _] {:title "Title" :text "本文"})
                       openai/article-text->classification!
                       (partial classify "openai"
-                               {:category "science-technology" :difficulty {:lingq-level 3}})
+                               {:category "science-technology" :jlpt-level "N3"})
                       typesafe/article-text->classification!
                       (partial classify "typesafe"
-                               {:category "health" :difficulty {:lingq-level 4}})
-                      audio/text-to-speech! (fn [& _] (throw (ex-info "Unexpected audio" {})))
+                               {:category "health" :jlpt-level "N2"})
+                      tts/text-to-speech! (fn [& _] (throw (ex-info "Unexpected audio" {})))
                       lingq/create-lesson (fn [& _] (throw (ex-info "Unexpected upload" {})))]
           (let [output (with-out-str
                          (apply core/-main

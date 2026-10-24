@@ -1,4 +1,4 @@
-(ns lingq-lesson.openai.audio
+(ns lingq-lesson.openai.text-to-speech
   (:require
    [lingq-lesson.openai :as openai]
    [hato.client :as hc]

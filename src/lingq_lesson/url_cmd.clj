@@ -1,7 +1,7 @@
 (ns lingq-lesson.url-cmd
   (:require
    [clojure.string :as str]
-   [lingq-lesson.openai.audio :as audio]
+   [lingq-lesson.openai.text-to-speech :as tts]
    [lingq-lesson.audio-instructions :as audio-instructions]
    [lingq-lesson.lingq :as lingq]
    [lingq-lesson.parser :as parser]
@@ -38,6 +38,14 @@
     (catch clojure.lang.ExceptionInfo _
       false)))
 
+(def choice->difficulty
+  {"N5"       {:jlpt-level "N5" :lingq-level 1}
+   "N4"       {:jlpt-level "N4" :lingq-level 2}
+   "N3"       {:jlpt-level "N3" :lingq-level 3}
+   "N2"       {:jlpt-level "N2" :lingq-level 4}
+   "N1"       {:jlpt-level "N1" :lingq-level 5}
+   "above-n1" {:jlpt-level "Above N1" :lingq-level 6}})
+
 (def supported-classifiers #{"typesafe" "openai"})
 
 (def url-spec
@@ -45,13 +53,13 @@
   {:url          {:desc "URL of the article to use"
                   :require true
                   :validate valid-url?}
-   :voice        {:desc (str "Voice to use " (supported-values-desc audio/voices))
+   :voice        {:desc (str "Voice to use " (supported-values-desc tts/voices))
                   :require false
-                  :validate audio/supported-voice?}
+                  :validate tts/supported-voice?}
    :category        {:desc (str "Article subject category " (supported-values-desc audio-instructions/supported-categories))
                      :require false
                      :validate audio-instructions/supported-category?}
-   :image        {:desc "images to use"
+   :image        {:desc "Cover image to use"
                   :require false
                   :validate valid-url?
                   :default nil}
@@ -59,17 +67,18 @@
                   :require false
                   :default nil
                   :validate positive-course-id?}
-   :lingq-level  {:desc "LingQ lesson level (1-6)"
-                  :require false
-                  :coerce :long
-                  :validate #(<= 1 % 6)}
+   :jlpt-level  {:desc "JLPT level (N5-N1, above N1)"
+                 :require false
+                 :default nil
+                 :coerce str/upper-case
+                 :validate #(contains? choice->difficulty %)}
    :dry-run      {:desc "Assess article category and difficulty without creating a lesson"
                   :require false
                   :default false
                   :validate boolean?}
    :classifier  {:desc "Article classifier to use (typesafe, openai)"
                  :require false
-                 :default "typesafe"
+                 :default "openai"
                  :validate #(contains? supported-classifiers %)}})
 
 (def url-doc
@@ -113,7 +122,7 @@
   (let [voice (or voice-override (resolve-voice category))]
     (println-status
      (str "Creating audio for " title " with category: " category " and voice: " voice))
-    (audio/text-to-speech! (str title "\n\n" text)
+    (tts/text-to-speech! (str title "\n\n" text)
                            {:voice voice
                             :category category})))
 
@@ -131,13 +140,12 @@
   (println "Uploading lesson to Lingq:")
   (println (format "  title: %s\n  url:   %s\n" title original-url)))
 
-(defn- dry-run!
+(defn- print-assessment!
   [article category difficulty]
   (println (format "Title: %s" (:title article)))
   (println (format "Category: %s" category))
   (println (format "Lingq Level: %s" (:lingq-level difficulty)))
-  (when-some [level (:jlpt-level difficulty)]
-    (println (format "JLPT Level: %s" level))))
+  (println (format "JLPT Level: %s" (:jlpt-level difficulty))))
 
 (defn- create-lesson!
   [opts]
@@ -148,14 +156,14 @@
                                       {:download-image? (not (:dry-run opts))})
         text (:text article)
         title (:title article)
-        classification (case (:classifier opts)
-                         "typesafe" (typesafe-article-classifier/article-text->classification! text)
-                         "openai" (openai-article-classifier/article-text->classification! text))
-        difficulty (or (when-some [level (:lingq-level opts)] {:lingq-level level})
-                       (:difficulty classification))
+        classification (when-not (and (:category opts) (:jlpt-level opts))
+                         (case (:classifier opts)
+                           "typesafe" (typesafe-article-classifier/article-text->classification! text)
+                           "openai" (openai-article-classifier/article-text->classification! text)))
+        difficulty (or (choice->difficulty (:jlpt-level opts)) (choice->difficulty (:jlpt-level classification)))
         category (or (:category opts) (:category classification))]
-    (if (:dry-run opts)
-      (dry-run! article category difficulty)
+    (print-assessment! article category difficulty)
+    (when-not (:dry-run opts)
       (let [audio (create-audio! text title category (:voice opts))
             lesson (build-lesson article
                                  source-url

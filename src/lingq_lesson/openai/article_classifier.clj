@@ -3,7 +3,7 @@
    [hato.client :as hc]
    [lingq-lesson.api :as api]
    [lingq-lesson.openai :as openai]
-   [lingq-lesson.openai.difficulty-classifier :as difficulty-classifier]
+   [lingq-lesson.openai.jlpt-level-classifier :as jlpt-level-classifier]
    [lingq-lesson.openai.category-classifier :as category-classifier]))
 
 (def decisions-url "https://api.openai.com/v1/decisions")
@@ -59,10 +59,10 @@
   [article-text]
   (let [response (questions
                   article-text
-                  [difficulty-classifier/difficulty-question
+                  [jlpt-level-classifier/jlpt-level-question
                    category-classifier/category-question])
-        [difficulty-answer category-answer] (:answers response)
-        difficulty-choice (answer->choice difficulty-answer)
+        [jlpt-level-answer category-answer] (:answers response)
+        jlpt-level-choice (answer->choice jlpt-level-answer)
         category-choice (answer->choice category-answer)]
-    {:difficulty (difficulty-classifier/choice->difficulty difficulty-choice)
+    {:jlpt-level jlpt-level-choice
      :category category-choice}))

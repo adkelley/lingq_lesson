@@ -1,9 +1,9 @@
-(ns lingq-lesson.audio-test
+(ns lingq-lesson.text-to-speech-test
   (:require
    [cheshire.core :as json]
    [clojure.test :refer [deftest is]]
    [hato.client :as hc]
-   [lingq-lesson.openai.audio :as audio]
+   [lingq-lesson.openai.text-to-speech :as tts]
    [lingq-lesson.audio-instructions :as audio-instructions]
    [lingq-lesson.openai :as openai]))
 
@@ -19,7 +19,7 @@
                              :headers {}
                              :body audio-bytes})]
       (is (= audio-bytes
-             (audio/text-to-speech! "lesson text" {:voice "nova"
+             (tts/text-to-speech! "lesson text" {:voice "nova"
                                                    :category "lifestyle"})))
       (is (= openai/speech-url (:url @request)))
       (is (= {:headers {"authorization" "Bearer test-key"
@@ -43,7 +43,7 @@
                             {:status 200
                              :headers {}
                              :body (.getBytes "audio-bytes" "UTF-8")})]
-      (audio/text-to-speech! "lesson text" {})
+      (tts/text-to-speech! "lesson text" {})
       (is (= "alloy" (:voice @payload)))
       (is (= "mp3" (:response_format @payload)))
       (is (= audio-instructions/newscaster (:instructions @payload))))))
@@ -56,7 +56,7 @@
                            :headers {}
                            :body (.getBytes "{\"error\":{\"message\":\"bad request\"}}" "UTF-8")})]
     (try
-      (audio/text-to-speech! "lesson text" {})
+      (tts/text-to-speech! "lesson text" {})
       (is false "Expected OpenAI response error")
       (catch clojure.lang.ExceptionInfo e
         (is (= "OpenAI returned status 400. bad request"

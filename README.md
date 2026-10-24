@@ -60,7 +60,7 @@ bb lingq url https://example.com/article --classifier openai --category science-
 bb lingq url https://example.com/article --dry-run --classifier typesafe
 ```
 
-`--classifier` selects `typesafe` (the default) or `openai`. Both assess article
+`--classifier` selects `typesafe` or `openai` (the default). Both assess article
 category and Japanese reading difficulty. `--category` overrides the selected
 category; `--lingq-level` overrides the resulting lesson level (1–6). These
 options override results; the combined classification request still runs.
@@ -68,7 +68,7 @@ options override results; the combined classification request still runs.
 Dry runs print title, category, and difficulty without downloading the cover,
 generating audio, or uploading to LingQ.
 
-Categories follow Yomiuri's broad subject sections:
+Categories follow [Yomiuri's Shinbun's](https://www.yomiuri.co.jp) broad subject sections:
 
 Category | Subject | Default voice
 --- | --- | ---

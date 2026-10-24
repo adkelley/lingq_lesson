@@ -2,7 +2,7 @@
   (:require
    [clojure.test :as test]
    [lingq-lesson.audio-instructions-test]
-   [lingq-lesson.audio-test]
+   [lingq-lesson.text-to-speech-test]
    [lingq-lesson.courses-cmd-test]
    [lingq-lesson.core-test]
    [lingq-lesson.difficulty-classifier-test]
@@ -13,7 +13,7 @@
 
 (defn run []
   (let [{:keys [fail error]} (test/run-tests 'lingq-lesson.audio-instructions-test
-                                             'lingq-lesson.audio-test
+                                             'lingq-lesson.text-to-speech-test
                                              'lingq-lesson.courses-cmd-test
                                              'lingq-lesson.core-test
                                              'lingq-lesson.difficulty-classifier-test
