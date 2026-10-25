@@ -75,10 +75,26 @@ Move an existing Japanese lesson to another course:
 bb lingq patch 47139983 --course-id 2948600
 ```
 
-The positional argument is the lesson ID; `--course-id` is the destination
-course ID. Both are required positive integers. The command requires
-`LINGQ_API_KEY` and prints the lesson ID and destination course title after
-the move succeeds. Currently, `patch` supports changing the course only.
+Rename an existing Japanese lesson:
+
+```sh
+bb lingq patch 47139983 --title "New lesson title"
+```
+
+Move and rename a lesson in the same request:
+
+```sh
+bb lingq patch 47139983 --course-id 2948600 --title "New lesson title"
+```
+
+The positional lesson ID is required and must be a positive integer. Supply at
+least one of `--course-id` (the destination course ID, also a positive integer)
+or `--title`. The command requires `LINGQ_API_KEY` and prints the lesson ID and
+updated API field names after the update succeeds. A course move is reported
+as `:collection`; a title change is reported as `:title`.
+
+The `patch` command currently updates lessons only; course renaming is not
+implemented in the CLI.
 
 The `url` command takes the article URL as its required positional argument:
 
@@ -254,7 +270,9 @@ bb test
 
 Tests mock external services, including CLI classifier selection, its TypeSafe
 default, invalid classifier rejection, category/voice overrides, and difficulty
-overrides. Routine tests do not make paid API calls or real LingQ uploads.
+overrides. Lesson patch tests cover moving and renaming lessons, required update
+fields, ID validation, HTTP requests, and API errors with authorization redaction.
+Routine tests do not make paid API calls or real LingQ uploads.
 
 Format Clojure files:
 
@@ -274,7 +292,7 @@ clojure -M:fmt check src test scripts
 src/lingq_lesson/core.clj                       CLI entrypoint and dispatch
 src/lingq_lesson/url_cmd.clj                    URL options and orchestration
 src/lingq_lesson/courses_cmd.clj                Course listing
-src/lingq_lesson/patch_cmd.clj                  Move an existing lesson to another course
+src/lingq_lesson/patch_cmd.clj                  Update a lesson's course and/or title
 src/lingq_lesson/lessons_cmd.clj                Course lesson listing and title formatting
 src/lingq_lesson/parser.clj                     Defuddle, text cleanup, images
 src/lingq_lesson/api.clj                        JSON, HTTP errors, header redaction

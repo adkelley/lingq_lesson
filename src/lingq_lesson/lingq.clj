@@ -324,11 +324,11 @@
     parsed-body))
 
 (defn patch-lesson
-  [lesson-id course-id]
+  [lesson-id fields]
   (let [url (format "https://www.lingq.com/api/v3/ja/lessons/%s/" lesson-id)
         response (hc/patch url
                            {:headers (request-headers)
-                            :form-params {:collection course-id}
+                            :form-params fields
                             :throw-exceptions false})
         {:keys [body status]} response
         response-body (body->str body)
@@ -356,10 +356,10 @@
 (defn get-my-lessons
   [course-id]
   (let [initial-url (format "https://www.lingq.com/api/v3/ja/collections/%s/lessons/" course-id)]
-     (loop [url initial-url
-            lessons []]
-       (let [{:keys [results next]} (fetch-page url)
-             lessons (into lessons results)]
-         (if next
-           (recur next lessons)
-           lessons)))))
+    (loop [url initial-url
+           lessons []]
+      (let [{:keys [results next]} (fetch-page url)
+            lessons (into lessons results)]
+        (if next
+          (recur next lessons)
+          lessons)))))
