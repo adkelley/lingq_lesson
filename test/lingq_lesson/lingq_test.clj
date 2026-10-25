@@ -7,6 +7,40 @@
 (defn- part-content [multipart name]
   (:content (first (filter #(= name (:name %)) multipart))))
 
+(deftest patch-course-sends-fields-and-parses-response
+  (let [fields {:title "新しいコース名"}
+        calls (atom [])]
+    (with-redefs-fn {#'lingq/request-headers
+                     (constantly {"authorization" "Token test-key"})
+                     #'hc/patch
+                     (fn [url opts]
+                       (swap! calls conj [url opts])
+                       {:status 200 :body "{\"id\":2948600,\"title\":\"新しいコース名\"}"})}
+      (fn []
+        (is (= {:id 2948600 :title "新しいコース名"}
+               (lingq/patch-course 2948600 fields)))
+        (is (= [["https://www.lingq.com/api/v3/ja/collections/2948600/"
+                 {:headers {"authorization" "Token test-key"}
+                  :form-params fields
+                  :throw-exceptions false}]]
+               @calls))))))
+
+(deftest patch-course-reports-api-errors-with-redacted-authorization
+  (with-redefs-fn {#'lingq/request-headers
+                   (constantly {"authorization" "Token test-key"})
+                   #'hc/patch
+                   (fn [_ _]
+                     {:status 403 :headers {} :body "{\"detail\":\"Forbidden\"}"})}
+    (fn []
+      (try
+        (lingq/patch-course 2948600 {:title "New title"})
+        (is false "Expected LingQ response error")
+        (catch clojure.lang.ExceptionInfo e
+          (is (= 403 (:status (ex-data e))))
+          (is (= {:detail "Forbidden"} (:body (ex-data e))))
+          (is (= "[REDACTED]"
+                 (get-in (ex-data e) [:response :opts :headers "authorization"]))))))))
+
 (deftest patch-lesson-sends-fields-and-parses-response
   (let [fields {:collection 2948600 :title "New title"}
         calls (atom [])]

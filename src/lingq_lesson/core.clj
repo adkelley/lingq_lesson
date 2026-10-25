@@ -26,10 +26,20 @@
     :spec lessons-cmd/lessons-spec}
 
    {:cmds ["patch"]
-    :fn patch-cmd/patch
-    :doc patch-cmd/patch-doc
+    :doc "Update a lesson or course. Run 'patch --help' for subcommands."}
+
+   {:cmds ["patch" "lesson"]
+    :fn patch-cmd/patch-lesson
+    :doc patch-cmd/patch-lesson-doc
     :args->opts [:lesson-id]
-    :spec patch-cmd/patch-spec}
+    :spec patch-cmd/patch-lesson-spec}
+
+   {:cmds ["patch" "course"]
+    :fn patch-cmd/patch-course
+    :doc patch-cmd/patch-course-doc
+    :args->opts [:course-id]
+    :spec patch-cmd/patch-course-spec}
+
 
    {:cmds ["url"]
     :fn url-cmd/url
@@ -46,7 +56,7 @@
   (System/exit 1))
 
 (def ^:private dispatch-options
-  {:prog "lingq-lesson"
+  {:prog "bb lingq"
    :help true
    :error-fn print-error!})
 

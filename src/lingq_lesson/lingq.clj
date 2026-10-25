@@ -339,6 +339,23 @@
        (request-headers)))
     parsed-body))
 
+(defn patch-course
+  [course-id fields]
+  (let [url (format "https://www.lingq.com/api/v3/ja/collections/%s/" course-id)
+        response (hc/patch url
+                           {:headers (request-headers)
+                            :form-params fields
+                            :throw-exceptions false})
+        {:keys [body status]} response
+        response-body (body->str body)
+        parsed-body (parse-json-body response-body)]
+    (when-not (<= 200 status 299)
+      (throw-response-error
+       (assoc response :body response-body)
+       (request-headers)))
+    parsed-body))
+
+
 (defn- fetch-page
   [url]
   (let [response (hc/get url
