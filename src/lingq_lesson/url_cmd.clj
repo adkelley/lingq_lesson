@@ -52,6 +52,7 @@
   ;; TODO: Add a public/private option
   {:url          {:desc "URL of the article to use"
                   :require true
+                  :no-doc true
                   :validate valid-url?}
    :voice        {:desc (str "Voice to use " (supported-values-desc tts/voices))
                   :require false
@@ -82,7 +83,9 @@
                  :validate #(contains? supported-classifiers %)}})
 
 (def url-doc
-  "Create a private Japanese LingQ lesson from an article URL. Other languages are not supported. Category determines narration instructions and the default voice.")
+  "Create a private Japanese LingQ lesson from an article URL. Other languages are not supported. Category determines narration instructions and the default voice.
+
+  <url> is required and must be a valid URL.")
 
 (def ^:private category->voice
   {"society" "alloy"

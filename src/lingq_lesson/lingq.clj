@@ -339,10 +339,9 @@
        (request-headers)))
     parsed-body))
 
-(defn get-my-lessons
-  [course-id]
-  (let [url (format "https://www.lingq.com/api/v3/ja/collections/%s/lessons/" course-id)
-        response (hc/get url
+(defn- fetch-page
+  [url]
+  (let [response (hc/get url
                          {:headers (request-headers)
                           :throw-exceptions false})
         {:keys [body status]} response
@@ -353,3 +352,14 @@
        (assoc response :body response-body)
        (request-headers)))
     parsed-body))
+
+(defn get-my-lessons
+  [course-id]
+  (let [initial-url (format "https://www.lingq.com/api/v3/ja/collections/%s/lessons/" course-id)]
+     (loop [url initial-url
+            lessons []]
+       (let [{:keys [results next]} (fetch-page url)
+             lessons (into lessons results)]
+         (if next
+           (recur next lessons)
+           lessons)))))

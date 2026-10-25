@@ -32,6 +32,22 @@ bb lingq courses ja
 The command prints each course's ID and title. Use the ID when selecting a
 course for a lesson upload.
 
+List lessons in a Japanese course:
+
+```sh
+bb lingq lessons 2948600
+```
+
+The course ID is required and must be a positive integer. The command requires
+`LINGQ_API_KEY` and prints lesson IDs, titles, and source URLs in columns.
+Titles are truncated with an ellipsis and padded to 30 terminal columns,
+counting ordinary Japanese and full-width characters as two columns. This only
+changes the display; lesson titles in LingQ remain unchanged. Missing source
+URLs are shown as blank, and an empty result prints `No lessons found.`
+
+The command follows LingQ's pagination links until all pages have been fetched,
+then displays the combined lesson list.
+
 The optional `--course-id` flag assigns a lesson to a selected course:
 
 ```sh
@@ -112,6 +128,7 @@ Print general or command-specific help:
 bb lingq --help
 bb lingq url --help
 bb lingq patch --help
+bb lingq lessons --help
 ```
 
 ## Requirements
@@ -258,7 +275,7 @@ src/lingq_lesson/core.clj                       CLI entrypoint and dispatch
 src/lingq_lesson/url_cmd.clj                    URL options and orchestration
 src/lingq_lesson/courses_cmd.clj                Course listing
 src/lingq_lesson/patch_cmd.clj                  Move an existing lesson to another course
-src/lingq_lesson/lessons_cmd.clj                Course lesson listing (work in progress)
+src/lingq_lesson/lessons_cmd.clj                Course lesson listing and title formatting
 src/lingq_lesson/parser.clj                     Defuddle, text cleanup, images
 src/lingq_lesson/api.clj                        JSON, HTTP errors, header redaction
 src/lingq_lesson/openai.clj                     Shared OpenAI configuration

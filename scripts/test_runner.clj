@@ -4,6 +4,7 @@
    [lingq-lesson.audio-instructions-test]
    [lingq-lesson.text-to-speech-test]
    [lingq-lesson.courses-cmd-test]
+   [lingq-lesson.lessons-cmd-test]
    [lingq-lesson.core-test]
    [lingq-lesson.difficulty-classifier-test]
    [lingq-lesson.lingq-test]
@@ -15,6 +16,7 @@
   (let [{:keys [fail error]} (test/run-tests 'lingq-lesson.audio-instructions-test
                                              'lingq-lesson.text-to-speech-test
                                              'lingq-lesson.courses-cmd-test
+                                             'lingq-lesson.lessons-cmd-test
                                              'lingq-lesson.core-test
                                              'lingq-lesson.difficulty-classifier-test
                                              'lingq-lesson.lingq-test
