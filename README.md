@@ -53,6 +53,17 @@ Create a lesson from an article URL:
 bb lingq url https://example.com/article
 ```
 
+Move an existing Japanese lesson to another course:
+
+```sh
+bb lingq patch 47139983 --course-id 2948600
+```
+
+The positional argument is the lesson ID; `--course-id` is the destination
+course ID. Both are required positive integers. The command requires
+`LINGQ_API_KEY` and prints the lesson ID and destination course title after
+the move succeeds. Currently, `patch` supports changing the course only.
+
 The `url` command takes the article URL as its required positional argument:
 
 ```sh
@@ -100,6 +111,7 @@ Print general or command-specific help:
 ```sh
 bb lingq --help
 bb lingq url --help
+bb lingq patch --help
 ```
 
 ## Requirements
@@ -245,6 +257,8 @@ clojure -M:fmt check src test scripts
 src/lingq_lesson/core.clj                       CLI entrypoint and dispatch
 src/lingq_lesson/url_cmd.clj                    URL options and orchestration
 src/lingq_lesson/courses_cmd.clj                Course listing
+src/lingq_lesson/patch_cmd.clj                  Move an existing lesson to another course
+src/lingq_lesson/lessons_cmd.clj                Course lesson listing (work in progress)
 src/lingq_lesson/parser.clj                     Defuddle, text cleanup, images
 src/lingq_lesson/api.clj                        JSON, HTTP errors, header redaction
 src/lingq_lesson/openai.clj                     Shared OpenAI configuration

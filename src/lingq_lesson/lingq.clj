@@ -146,7 +146,7 @@
       (throw (ex-info "No body in response" {:status status :body response-body})))
     parsed-body))
 
-(defn- patch-lesson
+(defn- patch-lesson-audio
   "Attaches audio to an existing lesson, mirroring the web app's updateLesson():
   PATCH /lessons/{id}/ with an `audio` file part. Audio is transcoded async
   (watch audioPending). Audio still needs the post-lock timing (a PATCH during
@@ -283,7 +283,7 @@
         ;; locked (tokenizing) lesson returns 200 but drops the audio, so wait for
         ;; the lock to clear first; get-lesson polls past it.
         (wait-for-tokenization id) ; text processing finished
-        (patch-lesson id audio)
+        (patch-lesson-audio id audio)
         (wait-for-audio id)         ; audioUrl present, audioPending false
         (generate-timestamps id)
         (wait-for-timestamps id)
@@ -311,6 +311,37 @@
 (defn get-my-collections
   [language]
   (let [url (format "https://www.lingq.com/api/v3/%s/collections/my/" language)
+        response (hc/get url
+                         {:headers (request-headers)
+                          :throw-exceptions false})
+        {:keys [body status]} response
+        response-body (body->str body)
+        parsed-body (parse-json-body response-body)]
+    (when-not (<= 200 status 299)
+      (throw-response-error
+       (assoc response :body response-body)
+       (request-headers)))
+    parsed-body))
+
+(defn patch-lesson
+  [lesson-id course-id]
+  (let [url (format "https://www.lingq.com/api/v3/ja/lessons/%s/" lesson-id)
+        response (hc/patch url
+                           {:headers (request-headers)
+                            :form-params {:collection course-id}
+                            :throw-exceptions false})
+        {:keys [body status]} response
+        response-body (body->str body)
+        parsed-body (parse-json-body response-body)]
+    (when-not (<= 200 status 299)
+      (throw-response-error
+       (assoc response :body response-body)
+       (request-headers)))
+    parsed-body))
+
+(defn get-my-lessons
+  [course-id]
+  (let [url (format "https://www.lingq.com/api/v3/ja/collections/%s/lessons/" course-id)
         response (hc/get url
                          {:headers (request-headers)
                           :throw-exceptions false})

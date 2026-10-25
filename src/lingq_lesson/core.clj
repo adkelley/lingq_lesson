@@ -1,8 +1,10 @@
 (ns lingq-lesson.core
   (:require
    [babashka.deps :as deps]
-   [lingq-lesson.url-cmd :as url-cmd]
-   [lingq-lesson.courses-cmd :as courses-cmd]))
+   [lingq-lesson.courses-cmd :as courses-cmd]
+   [lingq-lesson.lessons-cmd :as lessons-cmd]
+   [lingq-lesson.patch-cmd :as patch-cmd]
+   [lingq-lesson.url-cmd :as url-cmd]))
 
 ;; bb currently bundles an older babashka.cli; add and reload the newer
 ;; version so automatic help/completions are available before dispatch.
@@ -11,17 +13,29 @@
 (require '[babashka.cli :as cli] :reload)
 
 (def ^:private dispatch-table
-  [{:cmds ["url"]
-    :fn url-cmd/url
-    :doc url-cmd/url-doc
-    :args->opts [:url]
-    :spec url-cmd/url-spec}
-
-   {:cmds ["courses"]
+  [{:cmds ["courses"]
     :fn courses-cmd/courses
     :doc courses-cmd/courses-doc
     :args->opts [:language]
-    :spec courses-cmd/courses-spec}])
+    :spec courses-cmd/courses-spec}
+
+   {:cmds ["lessons"]
+    :fn lessons-cmd/lessons
+    :doc lessons-cmd/lessons-doc
+    :args->opts [:course-id]
+    :spec lessons-cmd/lessons-spec}
+
+   {:cmds ["patch"]
+    :fn patch-cmd/patch
+    :doc patch-cmd/patch-doc
+    :args->opts [:lesson-id]
+    :spec patch-cmd/patch-spec}
+
+   {:cmds ["url"]
+    :fn url-cmd/url
+    :doc url-cmd/url-doc
+    :args->opts [:url]
+    :spec url-cmd/url-spec}])
 
 (defn- print-error!
   [{:keys [msg]}]
