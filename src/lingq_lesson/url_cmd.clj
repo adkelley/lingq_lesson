@@ -124,9 +124,9 @@
   [category collections]
   (let [normalized-collections (map #(update % :title str/lower-case) collections)
         course-title (get {"science-technology" "science & technology"
-          "education-careers" "education & careers"}
-          category
-          category)
+                           "education-careers" "education & careers"}
+                          category
+                          category)
         matches (filter #(= course-title (:title %)) normalized-collections)
         candidates (if (= 1 (count matches))
                      matches
@@ -179,8 +179,8 @@
     (when-not (:dry-run opts)
       (let [course-id (or (:course-id opts)
                           (resolve-course-id
-                            category
-                            (:results (lingq/get-my-collections "ja"))))
+                           category
+                           (:results (lingq/get-my-collections "ja"))))
             audio (create-audio! text title category (:voice opts))
             lesson (build-lesson article
                                  source-url

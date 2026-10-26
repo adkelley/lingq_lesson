@@ -402,3 +402,18 @@
        (assoc response :body response-body)
        (request-headers)))
     parsed-body))
+
+(defn delete-lesson
+  [lesson-id]
+  (let [url (format "https://www.lingq.com/api/v3/ja/lessons/%s/" lesson-id)
+        response (hc/delete url
+                            {:headers (request-headers)
+                             :throw-exceptions false})
+        {:keys [body status]} response
+        response-body (body->str body)
+        parsed-body (parse-json-body response-body)]
+    (when-not (<= 200 status 299)
+      (throw-response-error
+       (assoc response :body response-body)
+       (request-headers)))
+    parsed-body))

@@ -185,3 +185,32 @@
             (is (= "[REDACTED]"
                    (get-in (ex-data e) [:response :opts :headers "authorization"])))
             (is (not (.contains (pr-str (ex-data e)) "test-key")))))))))
+
+(deftest delete-lesson-sends-request-and-accepts-empty-responses
+  (doseq [status [202 204]
+          body [nil ""]]
+    (let [calls (atom [])]
+      (with-redefs-fn {#'lingq/lingq-api-key "test-key"
+                       #'hc/delete (fn [url opts]
+                                     (swap! calls conj [url opts])
+                                     {:status status :body body})}
+        (fn []
+          (is (nil? (lingq/delete-lesson 46657394)))
+          (is (= [["https://www.lingq.com/api/v3/ja/lessons/46657394/"
+                   {:headers {"authorization" "Token test-key"}
+                    :throw-exceptions false}]]
+                 @calls)))))))
+
+(deftest delete-lesson-reports-errors-with-redaction
+  (doseq [[status body] [[401 ""] [403 "{\"detail\":\"Forbidden\"}"] [404 nil] [500 ""]]]
+    (with-redefs-fn {#'lingq/lingq-api-key "test-key"
+                     #'hc/delete (fn [& _] {:status status :headers {} :body body})}
+      (fn []
+        (try
+          (lingq/delete-lesson 46657394)
+          (is false "Expected response error")
+          (catch clojure.lang.ExceptionInfo e
+            (is (= status (:status (ex-data e))))
+            (is (= "[REDACTED]"
+                   (get-in (ex-data e) [:response :opts :headers "authorization"])))
+            (is (not (.contains (pr-str (ex-data e)) "test-key")))))))))

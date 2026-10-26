@@ -36,6 +36,12 @@
     :spec delete-cmd/delete-collection-spec
     :fn delete-cmd/delete-collection}
 
+   {:cmds ["delete" "lesson"]
+    :doc delete-cmd/delete-lesson-doc
+    :args->opts [:lesson-id]
+    :spec delete-cmd/delete-lesson-spec
+    :fn delete-cmd/delete-lesson}
+
    {:cmds ["merge"]
     :fn merge-cmd/merge-collections
     :doc merge-cmd/merge-collections-doc

@@ -104,9 +104,19 @@ bb lingq delete course 2942688
 The course ID is required and must be a positive integer. The command requires
 `LINGQ_API_KEY` and prints `Deletion accepted for course <id>.` after a successful
 response. HTTP 202 indicates acceptance, not confirmed completion. The effect
-on lessons inside a nonempty course has not been verified. Lesson deletion is
-not currently supported. Course deletion remains separate from `merge`, which
-leaves the source course in place.
+on lessons inside a nonempty course has not been verified. Course deletion
+remains separate from `merge`, which leaves the source course in place.
+
+Request deletion of an existing Japanese lesson:
+
+```sh
+bb lingq delete lesson 47139983
+```
+
+The lesson ID is required and must be a positive integer. The command requires
+`LINGQ_API_KEY` and prints `Deletion accepted for lesson <id>.` after a
+successful response. HTTP 204 indicates that the lesson was deleted
+successfully. Lesson deletion removes the lesson but does not delete the course.
 
 Move an existing Japanese lesson to another course:
 
@@ -195,6 +205,7 @@ bb lingq --help
 bb lingq url --help
 bb lingq delete --help
 bb lingq delete course --help
+bb lingq delete lesson --help
 bb lingq merge --help
 bb lingq patch --help
 bb lingq patch lesson --help
@@ -339,6 +350,8 @@ moving lessons by ID, empty sources, and stopping on failure without reporting
 success.
 Course deletion tests cover dispatch, positive IDs, help, missing API keys,
 DELETE requests, empty success responses, and errors with authorization redaction.
+Lesson deletion tests cover dispatch, positive IDs, help, failed requests, DELETE
+requests, empty success responses, and errors with authorization redaction.
 Routine tests do not make paid API calls, real LingQ uploads, or deletions.
 
 Format Clojure files:
