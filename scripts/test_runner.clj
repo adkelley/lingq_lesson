@@ -5,6 +5,7 @@
    [lingq-lesson.text-to-speech-test]
    [lingq-lesson.courses-cmd-test]
    [lingq-lesson.lessons-cmd-test]
+   [lingq-lesson.merge-cmd-test]
    [lingq-lesson.patch-cmd-test]
    [lingq-lesson.core-test]
    [lingq-lesson.difficulty-classifier-test]
@@ -18,6 +19,7 @@
                                              'lingq-lesson.text-to-speech-test
                                              'lingq-lesson.courses-cmd-test
                                              'lingq-lesson.lessons-cmd-test
+                                             'lingq-lesson.merge-cmd-test
                                              'lingq-lesson.patch-cmd-test
                                              'lingq-lesson.core-test
                                              'lingq-lesson.difficulty-classifier-test

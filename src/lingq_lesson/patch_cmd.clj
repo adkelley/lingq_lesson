@@ -6,7 +6,7 @@
    :title :title})
 
 (def ^:private option->course-field
-   {:title :title})
+  {:title :title})
 
 (defn- opts->lesson-fields
   [opts]
@@ -55,8 +55,6 @@
            :require true
            :default nil}})
 
-
-
 (def patch-lesson-doc
   "Patch a LingQ lesson with a new course-id or title
 
@@ -66,7 +64,6 @@
   "Patch a LingQ course with a new title
 
   <course-id> is required")
-
 
 (defn patch-lesson
   [{{:keys [lesson-id] :as opts} :opts}]

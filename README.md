@@ -69,6 +69,20 @@ Create a lesson from an article URL:
 bb lingq url https://example.com/article
 ```
 
+Merge two Japanese courses by moving all lessons from the first course into the
+second:
+
+```sh
+bb lingq merge 123456 2948600
+```
+
+Both positional course IDs are required and must be positive integers. The first
+is the source; the second is the destination. The command requires
+`LINGQ_API_KEY`, fetches all pages of source lessons, and moves each lesson in
+turn. The source course remains in place after its lessons have been moved.
+An empty source prints `No lessons to merge.` If a move fails, the command stops;
+lessons already moved remain in the destination.
+
 Move an existing Japanese lesson to another course:
 
 ```sh
@@ -153,6 +167,7 @@ Print general or command-specific help:
 ```sh
 bb lingq --help
 bb lingq url --help
+bb lingq merge --help
 bb lingq patch --help
 bb lingq patch lesson --help
 bb lingq patch course --help
@@ -280,12 +295,15 @@ Run tests:
 bb test
 ```
 
-Tests mock external services, including CLI classifier selection, its TypeSafe
+Tests mock external services, including CLI classifier selection, its OpenAI
 default, invalid classifier rejection, category/voice overrides, and difficulty
 overrides. Lesson patch tests cover moving and renaming lessons, required update
 fields, ID validation, HTTP requests, and API errors with authorization redaction.
 Course patch tests cover renaming courses, required titles, ID validation, HTTP
 requests, and API errors with authorization redaction.
+Merge tests cover source/destination argument order, required positive IDs, help,
+moving lessons by ID, empty sources, and stopping on failure without reporting
+success.
 Routine tests do not make paid API calls or real LingQ uploads.
 
 Format Clojure files:
@@ -308,6 +326,7 @@ src/lingq_lesson/url_cmd.clj                    URL options and orchestration
 src/lingq_lesson/courses_cmd.clj                Course listing
 src/lingq_lesson/patch_cmd.clj                  Update lessons and courses
 src/lingq_lesson/lessons_cmd.clj                Course lesson listing and title formatting
+src/lingq_lesson/merge_cmd.clj                  Course merge options and dispatch
 src/lingq_lesson/parser.clj                     Defuddle, text cleanup, images
 src/lingq_lesson/api.clj                        JSON, HTTP errors, header redaction
 src/lingq_lesson/openai.clj                     Shared OpenAI configuration
@@ -335,8 +354,8 @@ test/                                         Regression tests
 - voice: selected from the effective category unless `--voice` is provided; fallback `alloy`
 - category: classified by the selected provider unless overridden by `--category`
 - TTS model: `gpt-4o-mini-tts`
-- classifier: `typesafe` using `jev-latest`
-- alternate classifier: `openai` using `gpt-6-luna`
+- classifier: `openai` using `gpt-6-luna`
+- alternate classifier: `typesafe` using `jev-latest`
 
 Supported voices:
 

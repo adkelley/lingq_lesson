@@ -3,6 +3,7 @@
    [babashka.deps :as deps]
    [lingq-lesson.courses-cmd :as courses-cmd]
    [lingq-lesson.lessons-cmd :as lessons-cmd]
+   [lingq-lesson.merge-cmd :as merge-cmd]
    [lingq-lesson.patch-cmd :as patch-cmd]
    [lingq-lesson.url-cmd :as url-cmd]))
 
@@ -25,6 +26,12 @@
     :args->opts [:course-id]
     :spec lessons-cmd/lessons-spec}
 
+   {:cmds ["merge"]
+    :fn merge-cmd/merge-collections
+    :doc merge-cmd/merge-collections-doc
+    :args->opts [:fr-course-id :to-course-id]
+    :spec merge-cmd/merge-collections-spec}
+
    {:cmds ["patch"]
     :doc "Update a lesson or course. Run 'patch --help' for subcommands."}
 
@@ -39,7 +46,6 @@
     :doc patch-cmd/patch-course-doc
     :args->opts [:course-id]
     :spec patch-cmd/patch-course-spec}
-
 
    {:cmds ["url"]
     :fn url-cmd/url

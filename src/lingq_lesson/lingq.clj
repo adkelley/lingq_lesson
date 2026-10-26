@@ -308,21 +308,6 @@
       (println "No lesson id in import response; skipping audio/tags attach.")))
   (System/exit 0))
 
-(defn get-my-collections
-  [language]
-  (let [url (format "https://www.lingq.com/api/v3/%s/collections/my/" language)
-        response (hc/get url
-                         {:headers (request-headers)
-                          :throw-exceptions false})
-        {:keys [body status]} response
-        response-body (body->str body)
-        parsed-body (parse-json-body response-body)]
-    (when-not (<= 200 status 299)
-      (throw-response-error
-       (assoc response :body response-body)
-       (request-headers)))
-    parsed-body))
-
 (defn patch-lesson
   [lesson-id fields]
   (let [url (format "https://www.lingq.com/api/v3/ja/lessons/%s/" lesson-id)
@@ -355,7 +340,6 @@
        (request-headers)))
     parsed-body))
 
-
 (defn- fetch-page
   [url]
   (let [response (hc/get url
@@ -380,3 +364,26 @@
         (if next
           (recur next lessons)
           lessons)))))
+
+(defn get-my-collections
+  [language]
+  (let [url (format "https://www.lingq.com/api/v3/%s/collections/my/" language)
+        response (hc/get url
+                         {:headers (request-headers)
+                          :throw-exceptions false})
+        {:keys [body status]} response
+        response-body (body->str body)
+        parsed-body (parse-json-body response-body)]
+    (when-not (<= 200 status 299)
+      (throw-response-error
+       (assoc response :body response-body)
+       (request-headers)))
+    parsed-body))
+
+(defn merge-collections
+  [from-course-id to-course-id]
+  (let [from-lessons (get-my-lessons from-course-id)]
+    (if (seq from-lessons)
+      (doseq [lesson from-lessons]
+        (patch-lesson (:id lesson) {:collection to-course-id}))
+      (println "No lessons to merge."))))
