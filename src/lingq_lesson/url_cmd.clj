@@ -120,6 +120,22 @@
   [category]
   (get category->voice category "alloy"))
 
+(defn resolve-course-id
+  [category collections]
+  (let [normalized-collections (map #(update % :title str/lower-case) collections)
+        course-title (get {"science-technology" "science & technology"
+          "education-careers" "education & careers"}
+          category
+          category)
+        matches (filter #(= course-title (:title %)) normalized-collections)
+        candidates (if (= 1 (count matches))
+                     matches
+                     (filter #(= "quick imports" (:title %)) normalized-collections))]
+    (if (= 1 (count candidates))
+      (:id (first candidates))
+      (throw (ex-info "Could not select a unique Quick Imports course"
+                      {:category category :fallback-matches (count candidates)})))))
+
 (defn- create-audio!
   [text title category voice-override]
   (let [voice (or voice-override (resolve-voice category))]
@@ -138,11 +154,6 @@
           :original-url (or (:original-url article) source-url)
           :course-id course-id}))
 
-;; (defn- print-lesson-summary!
-;;   [{:keys [title original-url]}]
-;;   (println "Uploading lesson to Lingq:")
-;;   (println (format "  title: %s\n  url:   %s\n" title original-url)))
-
 (defn- print-assessment!
   [article category difficulty]
   (println (format "Title: %s" (:title article)))
@@ -154,7 +165,6 @@
   [opts]
   (let [source-url (:url opts)
         image-url (:image opts)
-        course-id (:course-id opts)
         article (parser/parse-article source-url image-url
                                       {:download-image? (not (:dry-run opts))})
         text (:text article)
@@ -167,13 +177,16 @@
         category (or (:category opts) (:category classification))]
     (print-assessment! article category difficulty)
     (when-not (:dry-run opts)
-      (let [audio (create-audio! text title category (:voice opts))
+      (let [course-id (or (:course-id opts)
+                          (resolve-course-id
+                            category
+                            (:results (lingq/get-my-collections "ja"))))
+            audio (create-audio! text title category (:voice opts))
             lesson (build-lesson article
                                  source-url
                                  audio
                                  difficulty
                                  course-id)]
-        ;; (print-lesson-summary! lesson)
         (lingq/create-lesson lesson)))))
 
 (defn url

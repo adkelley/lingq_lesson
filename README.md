@@ -48,7 +48,19 @@ URLs are shown as blank, and an empty result prints `No lessons found.`
 The command follows LingQ's pagination links until all pages have been fetched,
 then displays the combined lesson list.
 
-The optional `--course-id` flag assigns a lesson to a selected course:
+URL imports automatically select a Japanese course using the effective article
+category, including any `--category` override. Course titles are matched without
+regard to capitalization: `culture` matches `Culture`. The compound categories
+`science-technology` and `education-careers` match `Science & Technology` and
+`Education & Careers`, respectively.
+
+If the category has no matching course, or more than one matching course, the
+command uses `Quick Imports` (also matched without regard to capitalization).
+If that fallback is missing or ambiguous, the command stops before generating
+audio or uploading. Collection lookup errors also stop the import.
+
+The optional `--course-id` flag overrides automatic selection and skips collection
+lookup:
 
 ```sh
 bb lingq url https://example.com/article --course-id 123456
@@ -146,7 +158,7 @@ category; `--lingq-level` overrides the resulting lesson level (1–6). These
 options override results; the combined classification request still runs.
 
 Dry runs print title, category, and difficulty without downloading the cover,
-generating audio, or uploading to LingQ.
+looking up courses, generating audio, or uploading to LingQ.
 
 Categories follow [Yomiuri's Shinbun's](https://www.yomiuri.co.jp) broad subject sections:
 
@@ -167,7 +179,8 @@ Category | Subject | Default voice
 `other` | Content outside these categories | `alloy`
 
 Classification prefers a specific subject over geography when the subject is
-central. Categories determine narration instructions and default voices.
+central. Categories determine the destination course, narration instructions,
+and default voices.
 Use `--voice` to override the voice (`alloy`, `echo`, `nova`, `onyx`, or `shimmer`).
 The former article `--style` / `--vibe` options are replaced by `--category`.
 
@@ -228,6 +241,9 @@ TypeSafe or OpenAI category + JLPT assessment
   |
   v
 Apply category and difficulty overrides
+  |
+  v
+Resolve course from category or explicit course ID (skipped for dry runs)
   |
   v
 OpenAI text-to-speech (skipped for dry runs)
@@ -312,7 +328,9 @@ bb test
 
 Tests mock external services, including CLI classifier selection, its OpenAI
 default, invalid classifier rejection, category/voice overrides, and difficulty
-overrides. Lesson patch tests cover moving and renaming lessons, required update
+overrides. Course-selection tests cover case-insensitive titles, compound category
+names, Quick Imports fallback, explicit course overrides, dry runs, and failures
+that prevent audio generation and upload. Lesson patch tests cover moving and renaming lessons, required update
 fields, ID validation, HTTP requests, and API errors with authorization redaction.
 Course patch tests cover renaming courses, required titles, ID validation, HTTP
 requests, and API errors with authorization redaction.
@@ -371,6 +389,7 @@ test/                                         Regression tests
 - tags: extracted from article metadata
 - voice: selected from the effective category unless `--voice` is provided; fallback `alloy`
 - category: classified by the selected provider unless overridden by `--category`
+- course: selected from the effective category unless `--course-id` is provided; fallback `Quick Imports`
 - TTS model: `gpt-4o-mini-tts`
 - classifier: `openai` using `gpt-6-luna`
 - alternate classifier: `typesafe` using `jev-latest`

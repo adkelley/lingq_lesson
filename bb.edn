@@ -10,5 +10,7 @@
             :requires ([test-runner])
             :task (test-runner/run)
             :depends []}
+  rebel  {:doc "Run REPL with rebel readline"
+            :task (shell "clojure -M:rebel")}
   fmt      {:doc "Format Clojure files with cljfmt"
             :task (shell "clojure -M:fmt fix src test scripts")}}}
