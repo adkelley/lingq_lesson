@@ -67,6 +67,8 @@
     (some-> body str)))
 
 (defn- request-headers []
+  (when (str/blank? lingq-api-key)
+    (throw (ex-info "lingq-api-key is not set" {})))
   {"authorization" (format "Token %s" lingq-api-key)})
 
 (defn- retry-after-seconds
@@ -120,8 +122,6 @@
            :content (str course-id)})))
 
 (defn- post-import-request [multipart]
-  (when-not (seq lingq-api-key)
-    (throw (ex-info "LINGQ_API_KEY not set" {})))
   ;; v3 import endpoint (v2 /lessons/ is obsolete). We import the .srt as a FILE
   ;; (the web "Text Files & Ebooks" path / importEbook() builder), NOT as `text`:
   ;;   title, file, filename, status, save=true  (multipart/form-data)
@@ -387,3 +387,18 @@
       (doseq [lesson from-lessons]
         (patch-lesson (:id lesson) {:collection to-course-id}))
       (println "No lessons to merge."))))
+
+(defn delete-collection
+  [course-id]
+  (let [url (format "https://www.lingq.com/api/v3/ja/collections/%s/" course-id)
+        response (hc/delete url
+                            {:headers (request-headers)
+                             :throw-exceptions false})
+        {:keys [body status]} response
+        response-body (body->str body)
+        parsed-body (parse-json-body response-body)]
+    (when-not (<= 200 status 299)
+      (throw-response-error
+       (assoc response :body response-body)
+       (request-headers)))
+    parsed-body))

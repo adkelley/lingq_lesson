@@ -7,6 +7,7 @@
    [lingq-lesson.lessons-cmd-test]
    [lingq-lesson.merge-cmd-test]
    [lingq-lesson.patch-cmd-test]
+   [lingq-lesson.delete-cmd-test]
    [lingq-lesson.core-test]
    [lingq-lesson.difficulty-classifier-test]
    [lingq-lesson.lingq-test]
@@ -21,6 +22,7 @@
                                              'lingq-lesson.lessons-cmd-test
                                              'lingq-lesson.merge-cmd-test
                                              'lingq-lesson.patch-cmd-test
+                                             'lingq-lesson.delete-cmd-test
                                              'lingq-lesson.core-test
                                              'lingq-lesson.difficulty-classifier-test
                                              'lingq-lesson.lingq-test

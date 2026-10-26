@@ -146,3 +146,42 @@
                     :original-url "https://example.com/article"
                     :course-id nil})]
     (is (nil? (part-content multipart "collection")))))
+
+(deftest delete-course-sends-request-and-accepts-empty-responses
+  (doseq [status [202 204]
+          body [nil ""]]
+    (let [calls (atom [])]
+      (with-redefs-fn {#'lingq/lingq-api-key "test-key"
+                       #'hc/delete (fn [url opts]
+                                     (swap! calls conj [url opts])
+                                     {:status status :body body})}
+        (fn []
+          (is (nil? (lingq/delete-collection 2942688)))
+          (is (= [["https://www.lingq.com/api/v3/ja/collections/2942688/"
+                   {:headers {"authorization" "Token test-key"}
+                    :throw-exceptions false}]] @calls)))))))
+
+(deftest missing-key-prevents-requests
+  (doseq [key-value [nil "" "   "]]
+    (with-redefs-fn {#'lingq/lingq-api-key key-value
+                     #'hc/delete (fn [& _] (throw (AssertionError. "Unexpected deletion")))
+                     #'hc/get (fn [& _] (throw (AssertionError. "Unexpected GET")))}
+      (fn []
+        (is (thrown-with-msg? clojure.lang.ExceptionInfo #"not set"
+                              (lingq/delete-collection 2942688)))
+        (is (thrown-with-msg? clojure.lang.ExceptionInfo #"not set"
+                              (lingq/get-my-collections "ja")))))))
+
+(deftest delete-course-reports-errors-with-redaction
+  (doseq [[status body] [[401 ""] [403 "{\"detail\":\"Forbidden\"}"] [404 nil] [500 ""]]]
+    (with-redefs-fn {#'lingq/lingq-api-key "test-key"
+                     #'hc/delete (fn [& _] {:status status :headers {} :body body})}
+      (fn []
+        (try
+          (lingq/delete-collection 2942688)
+          (is false "Expected response error")
+          (catch clojure.lang.ExceptionInfo e
+            (is (= status (:status (ex-data e))))
+            (is (= "[REDACTED]"
+                   (get-in (ex-data e) [:response :opts :headers "authorization"])))
+            (is (not (.contains (pr-str (ex-data e)) "test-key")))))))))

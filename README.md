@@ -83,6 +83,19 @@ turn. The source course remains in place after its lessons have been moved.
 An empty source prints `No lessons to merge.` If a move fails, the command stops;
 lessons already moved remain in the destination.
 
+Request deletion of an existing Japanese course:
+
+```sh
+bb lingq delete course 2942688
+```
+
+The course ID is required and must be a positive integer. The command requires
+`LINGQ_API_KEY` and prints `Deletion accepted for course <id>.` after a successful
+response. HTTP 202 indicates acceptance, not confirmed completion. The effect
+on lessons inside a nonempty course has not been verified. Lesson deletion is
+not currently supported. Course deletion remains separate from `merge`, which
+leaves the source course in place.
+
 Move an existing Japanese lesson to another course:
 
 ```sh
@@ -167,6 +180,8 @@ Print general or command-specific help:
 ```sh
 bb lingq --help
 bb lingq url --help
+bb lingq delete --help
+bb lingq delete course --help
 bb lingq merge --help
 bb lingq patch --help
 bb lingq patch lesson --help
@@ -304,7 +319,9 @@ requests, and API errors with authorization redaction.
 Merge tests cover source/destination argument order, required positive IDs, help,
 moving lessons by ID, empty sources, and stopping on failure without reporting
 success.
-Routine tests do not make paid API calls or real LingQ uploads.
+Course deletion tests cover dispatch, positive IDs, help, missing API keys,
+DELETE requests, empty success responses, and errors with authorization redaction.
+Routine tests do not make paid API calls, real LingQ uploads, or deletions.
 
 Format Clojure files:
 
@@ -324,6 +341,7 @@ clojure -M:fmt check src test scripts
 src/lingq_lesson/core.clj                       CLI entrypoint and dispatch
 src/lingq_lesson/url_cmd.clj                    URL options and orchestration
 src/lingq_lesson/courses_cmd.clj                Course listing
+src/lingq_lesson/delete_cmd.clj                 Course deletion options and dispatch
 src/lingq_lesson/patch_cmd.clj                  Update lessons and courses
 src/lingq_lesson/lessons_cmd.clj                Course lesson listing and title formatting
 src/lingq_lesson/merge_cmd.clj                  Course merge options and dispatch

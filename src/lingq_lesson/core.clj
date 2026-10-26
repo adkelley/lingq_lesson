@@ -2,6 +2,7 @@
   (:require
    [babashka.deps :as deps]
    [lingq-lesson.courses-cmd :as courses-cmd]
+   [lingq-lesson.delete-cmd :as delete-cmd]
    [lingq-lesson.lessons-cmd :as lessons-cmd]
    [lingq-lesson.merge-cmd :as merge-cmd]
    [lingq-lesson.patch-cmd :as patch-cmd]
@@ -25,6 +26,15 @@
     :doc lessons-cmd/lessons-doc
     :args->opts [:course-id]
     :spec lessons-cmd/lessons-spec}
+
+   {:cmds ["delete"]
+    :doc "Delete a Japanese course. Run 'delete --help' for subcommands."}
+
+   {:cmds ["delete" "course"]
+    :doc delete-cmd/delete-collection-doc
+    :args->opts [:course-id]
+    :spec delete-cmd/delete-collection-spec
+    :fn delete-cmd/delete-collection}
 
    {:cmds ["merge"]
     :fn merge-cmd/merge-collections
